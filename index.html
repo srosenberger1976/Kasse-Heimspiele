@@ -1,35 +1,4 @@
-function renderSetupPlayers() {
-  const area = document.getElementById('setup-player-area');
-  if (selectedTeams.length === 0) {
-    area.innerHTML = '<div style="color:var(--text-muted); padding:20px; text-align:center;">Bitte links zuerst 2 bis 4 Mannschaften auswählen.</div>';
-    return;
-  }
-
-  area.innerHTML = '';
-  selectedTeams.forEach(team => {
-    const group = document.createElement('div');
-    group.className = 'team-player-group';
-
-    const header = document.createElement('h4');
-    header.innerHTML = `<span>${team}</span><button class="btn-3d btn-slate" style="padding:4px 10px; font-size:0.8rem;" onclick="selectAllPlayersOfTeam('${team}')">Alle wählen</button>`;
-    group.appendChild(header);
-
-    const pills = document.createElement('div');
-    pills.className = 'player-pills';
-
-    (allTeams[team] || []).forEach(playerName => {
-      const isActive = (activePlayers[team] || []).some(p => p.name === playerName);
-      const pill = document.createElement('div');
-      pill.className = 'player-pill' + (isActive ? ' active' : '');
-      pill.textContent = playerName;
-      pill.onclick = () => togglePlayerActive(team, playerName);
-      pills.appendChild(pill);
-    });
-
-    group.appendChild(pills);
-    area.appendChild(group);
-  });
-}<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8">
@@ -1089,8 +1058,6 @@ function renderSetupPlayers() {
   }
 
   area.innerHTML = '';
-  const seenPlayers = new Set();
-
   selectedTeams.forEach(team => {
     const group = document.createElement('div');
     group.className = 'team-player-group';
@@ -1103,9 +1070,6 @@ function renderSetupPlayers() {
     pills.className = 'player-pills';
 
     (allTeams[team] || []).forEach(playerName => {
-      if (seenPlayers.has(playerName)) return;
-      seenPlayers.add(playerName);
-
       const isActive = (activePlayers[team] || []).some(p => p.name === playerName);
       const pill = document.createElement('div');
       pill.className = 'player-pill' + (isActive ? ' active' : '');
@@ -1118,7 +1082,6 @@ function renderSetupPlayers() {
     area.appendChild(group);
   });
 }
-
 
 function togglePlayerActive(team, playerName) {
   if (!activePlayers[team]) activePlayers[team] = [];
@@ -1137,21 +1100,18 @@ function togglePlayerActive(team, playerName) {
 }
 
 function selectAllPlayersOfTeam(team) {
-  if (!activePlayers[team]) activePlayers[team] = [];
-  const alreadyInAnyTeam = new Set(
-    Object.values(activePlayers).flat().map(p => p.name)
-  );
-
-  (allTeams[team] || []).forEach(playerName => {
-    if (!alreadyInAnyTeam.has(playerName)) {
-      activePlayers[team].push({ name: playerName, orders: [], einwurfPaid: false });
-      alreadyInAnyTeam.add(playerName);
-    }
+  const roster = allTeams[team] || [];
+  activePlayers[team] = roster.map((name, i) => {
+    const existing = (activePlayers[team] || []).find(p => p.name === name);
+    return existing || {
+      id: 'p_' + Date.now() + '_' + i,
+      name,
+      items: [],
+      einwurf: 0
+    };
   });
-  saveState();
   renderSetupPlayers();
 }
-
 
 function startMatchday() {
  if (selectedTeams.length < 1) {
