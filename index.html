@@ -621,20 +621,29 @@
 
 <!-- VIEW 2: KASSENBETRIEB (MANNSCHAFTEN & SPIELER) -->
 <div id="view-pos" class="view">
-  <div class="top-nav-bar">
-    <div class="team-tabs" id="pos-team-tabs"></div>
-    <button class="btn-3d btn-amber" onclick="selectGuestTab()">👤 Gäste</button>
-    <button class="btn-3d btn-purple" onclick="openAccounting()">📊 3-fach Abrechnung</button>
-    <button class="btn-3d btn-slate" onclick="backToSetup()">⚙️ Setup</button>
-  </div>
+<div class="top-nav-bar">
+  <button id="tab-heim" class="btn-3d btn-blue team-tab-btn" onclick="switchPosCategory('HEIM')">🎯 High Flyer (Heim)</button>
+  <button id="tab-guests" class="btn-3d btn-amber team-tab-btn" onclick="switchPosCategory('GUESTS')">👥 Gäste & Gegner</button>
+ <button class="btn-3d btn-purple" onclick="openAccounting()">📊 3-fach Abrechnung</button>
+ <button class="btn-3d btn-slate" onclick="backToSetup()">⚙ Setup</button>
+ <button class="btn-3d btn-red" onclick="resetMatchdayData()">🗑️ Spieltag Reset</button>
+</div>
+
+
 
   <div class="card-3d" style="min-height: 68vh;">
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:14px;">
       <h2 id="current-team-heading">Mannschaft wählen</h2>
-      <div id="latecomer-controls" style="display:flex; gap:10px; align-items:center;"></div>
+    <div id="latecomer-controls" style="display:flex; gap:10px; align-items:center;">
     </div>
+  </div>
 
-    <div class="players-fullscreen-grid" id="pos-players-grid"></div>
+  <div style="margin-top: 14px;">
+    <input type="text" id="pos-search-input" placeholder="🔍 Spielernamen schnell suchen..." oninput="renderPosView()">
+  </div>
+
+  <div class="players-fullscreen-grid" id="pos-players-grid"></div>
+
   </div>
 </div>
 
@@ -1101,80 +1110,110 @@ function selectAllPlayersOfTeam(team) {
 }
 
 function startMatchday() {
-  if (selectedTeams.length < 2) {
-    alert('Bitte wähle mindestens 2 Mannschaften (maximal 4) aus!');
-    return;
-  }
-  document.getElementById('welcome-text').textContent = 'Aktiver Spieltag: ' + selectedTeams.join(' • ');
-  switchView('view-pos');
-  currentPosTab = selectedTeams[0];
-  renderPosView();
+ if (selectedTeams.length < 1) {
+  alert('Bitte wähle mindestens eine Mannschaft aus!');
+  return;
+ }
+ document.getElementById('welcome-text').textContent = 'Aktiver Spieltag: ' + selectedTeams.join(' • ');
+ currentPosTab = 'HEIM';
+ switchView('view-pos');
+ renderPosView();
 }
 
 function backToSetup() {
-  switchView('view-setup');
-  renderSetupView();
+ switchView('view-setup');
+ renderSetupView();
 }
 
 function switchView(viewId) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById(viewId).classList.add('active');
+ document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+ document.getElementById(viewId).classList.add('active');
+ saveKasseState();
+}
+
+function switchPosCategory(tabKey) {
+ currentPosTab = tabKey;
+ const searchInput = document.getElementById('pos-search-input');
+ if (searchInput) searchInput.value = '';
+ saveKasseState();
+ renderPosView();
 }
 
 // ================= KASSENANSICHT (POS) =================
 function renderPosView() {
-  const tabsEl = document.getElementById('pos-team-tabs');
-  tabsEl.innerHTML = '';
+ ['HEIM', 'GUESTS'].forEach(key => {
+  const el = document.getElementById('tab-' + key.toLowerCase());
+  if (el) el.classList.toggle('active-tab', currentPosTab === key);
+ });
 
-  const colors = ['btn-blue', 'btn-green', 'btn-purple', 'btn-red'];
-  selectedTeams.forEach((team, idx) => {
-    const btn = document.createElement('button');
-    btn.className = `btn-3d ${colors[idx % colors.length]} team-tab-btn` + (currentPosTab === team ? ' active-tab' : '');
-    btn.textContent = team;
-    btn.onclick = () => {
-      currentPosTab = team;
-      renderPosView();
-    };
-    tabsEl.appendChild(btn);
+ const heading = document.getElementById('current-team-heading');
+ const controls = document.getElementById('latecomer-controls');
+ const grid = document.getElementById('pos-players-grid');
+ const searchVal = (document.getElementById('pos-search-input')?.value || '').trim().toLowerCase();
+ grid.innerHTML = '';
+
+ const heimTeams = selectedTeams.filter(t => t.toLowerCase().includes('high flyer'));
+ const guestTeams = selectedTeams.filter(t => !t.toLowerCase().includes('high flyer'));
+
+ if (currentPosTab === 'HEIM') {
+  heading.textContent = '🎯 High Flyer (Heimmannschaften)';
+
+  let ctrlHtml = '';
+  heimTeams.forEach(ht => {
+   ctrlHtml += `<button class="btn-3d btn-slate" onclick="openLatecomerModal('${ht}')">➕ Nachzügler (${ht})</button>`;
+  });
+  controls.innerHTML = ctrlHtml;
+
+  let countShown = 0;
+  heimTeams.forEach((ht, idx) => {
+   const btnColor = idx === 0 ? 'btn-blue' : 'btn-green';
+   const players = (activePlayers[ht] || []).filter(p => p.name.toLowerCase().includes(searchVal));
+   players.forEach(player => {
+    const card = createPersonCardButton(player, 'TEAM', ht, btnColor);
+    card.innerHTML = `<small style="opacity:0.8; font-size:0.75rem;">${ht}</small>` + card.innerHTML;
+    grid.appendChild(card);
+    countShown++;
+   });
   });
 
-  const heading = document.getElementById('current-team-heading');
-  const controls = document.getElementById('latecomer-controls');
-  const grid = document.getElementById('pos-players-grid');
-  grid.innerHTML = '';
-
-  if (currentPosTab === 'GAST') {
-    heading.textContent = '👤 Gäste';
-    controls.innerHTML = `<button class="btn-3d btn-amber" onclick="openAddGuestModal()">➕ Neuen Gast anlegen</button>`;
-
-    if (guests.length === 0) {
-      grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);">Noch keine Gäste angelegt. Klicke oben auf „Neuen Gast anlegen“.</div>';
-      return;
-    }
-
-    guests.forEach(guest => {
-      grid.appendChild(createPersonCardButton(guest, 'GAST', 'GAST', 'btn-amber'));
-    });
-  } else {
-    heading.textContent = '⚽ ' + currentPosTab;
-    controls.innerHTML = `<button class="btn-3d btn-slate" onclick="openLatecomerModal('${currentPosTab}')">➕ Nachzügler hinzufügen</button>`;
-
-    const list = activePlayers[currentPosTab] || [];
-    if (list.length === 0) {
-      grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);">Keine Spieler aktiv. Klicke auf „Nachzügler hinzufügen“.</div>';
-      return;
-    }
-
-    list.forEach(player => {
-      grid.appendChild(createPersonCardButton(player, 'TEAM', currentPosTab, 'btn-blue'));
-    });
+  if (countShown === 0) {
+   grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);">Keine Spieler aktiv oder High Flyer im Setup nicht ausgewählt.</div>';
   }
+
+ } else {
+  heading.textContent = '👥 Gäste & Gastmannschaften';
+
+  let ctrlHtml = `<button class="btn-3d btn-amber" onclick="openAddGuestModal()">➕ Neuen Gast anlegen</button>`;
+  guestTeams.forEach(gt => {
+   ctrlHtml += `<button class="btn-3d btn-slate" onclick="openLatecomerModal('${gt}')">➕ ${gt}</button>`;
+  });
+  controls.innerHTML = ctrlHtml;
+
+  let countShown = 0;
+
+  guestTeams.forEach(gt => {
+   const players = (activePlayers[gt] || []).filter(p => p.name.toLowerCase().includes(searchVal));
+   players.forEach(player => {
+    const card = createPersonCardButton(player, 'TEAM', gt, 'btn-purple');
+    card.innerHTML = `<small style="opacity:0.8; font-size:0.75rem;">${gt}</small>` + card.innerHTML;
+    grid.appendChild(card);
+    countShown++;
+   });
+  });
+
+  guests.filter(g => g.name.toLowerCase().includes(searchVal)).forEach(guest => {
+   const card = createPersonCardButton(guest, 'GAST', 'GAST', 'btn-amber');
+   card.innerHTML = `<small style="opacity:0.8; font-size:0.75rem;">Gast</small>` + card.innerHTML;
+   grid.appendChild(card);
+   countShown++;
+  });
+
+  if (countShown === 0) {
+   grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);">Keine Gäste oder Gastspieler gefunden.</div>';
+  }
+ }
 }
 
-function selectGuestTab() {
-  currentPosTab = 'GAST';
-  renderPosView();
-}
 
 function createPersonCardButton(person, type, teamName, btnColorClass) {
  const itemsSum = person.items.reduce((sum, it) => sum + it.price, 0);
@@ -1217,6 +1256,8 @@ function confirmAddGuest() {
   });
   closeAddPersonModal();
   renderPosView();
+
+saveKasseState();
 }
 
 function openLatecomerModal(teamName) {
@@ -1254,6 +1295,8 @@ function confirmAddLatecomer(teamName, playerName) {
   });
   closeAddPersonModal();
   renderPosView();
+saveKasseState();
+
 }
 
 function confirmCustomLatecomer(teamName) {
@@ -1369,6 +1412,8 @@ function addItemToPerson(item) {
   person.items.push(entry);
   soldHistory.push({ ...entry, personName: person.name });
   renderPlayerReceipt();
+
+saveKasseState();
 }
 
 function removeItemFromPerson(entryId) {
@@ -1377,6 +1422,8 @@ function removeItemFromPerson(entryId) {
   person.items = person.items.filter(i => i.entryId !== entryId);
   soldHistory = soldHistory.filter(s => s.entryId !== entryId);
   renderPlayerReceipt();
+saveKasseState();
+
 }
 
 function changeEinwurf(delta) {
@@ -1385,6 +1432,8 @@ function changeEinwurf(delta) {
  person.einwurf = Math.max(0, (Number(person.einwurf) || 0) + delta);
  renderPlayerReceipt();
  renderPosView();
+saveKasseState();
+
 }
 
 function renderPlayerReceipt() {
@@ -1452,7 +1501,9 @@ function payPlayerTab() {
   person.items = [];
   person.einwurf = 0;
   closePlayerModal();
- }
+ 
+saveKasseState();
+}
 }
 
 // ================= 3-FACH ABRECHNUNG =================
@@ -1553,17 +1604,78 @@ function exportAccountingTxt() {
   a.click();
 }
 
-fetch('vereinsheim_daten.txt?v=' + Date.now())
-  .then(response => {
-    if (!response.ok) throw new Error('Keine externe TXT gefunden');
-    return response.text();
-  })
-  .then(text => {
-    parseTxtData(text);
-  })
-  .catch(() => {
-    parseTxtData(DEFAULT_TXT);
-  });
+
+const STORAGE_KEY = 'vereinsheim_kasse_state_v1';
+
+function saveKasseState() {
+  const state = {
+    allTeams,
+    menuItems,
+    selectedTeams,
+    activePlayers,
+    guests,
+    soldHistory,
+    currentPosTab,
+    isPosActive: document.getElementById('view-pos').classList.contains('active')
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function loadKasseState() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return false;
+  try {
+    const state = JSON.parse(raw);
+    if (!state.selectedTeams || state.selectedTeams.length === 0) return false;
+    allTeams = state.allTeams || allTeams;
+    menuItems = state.menuItems || menuItems;
+    selectedTeams = state.selectedTeams || [];
+    activePlayers = state.activePlayers || {};
+    guests = state.guests || [];
+    soldHistory = state.soldHistory || [];
+    currentPosTab = (state.currentPosTab === 'HEIM' || state.currentPosTab === 'GUESTS') ? state.currentPosTab : 'HEIM';
+
+
+    if (state.isPosActive) {
+      document.getElementById('welcome-text').textContent = 'Aktiver Spieltag: ' + selectedTeams.join(' • ');
+      switchView('view-pos');
+      renderPosView();
+    } else {
+      renderSetupView();
+    }
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function resetMatchdayData() {
+  if (!confirm('Wirklich den gesamten Spieltag zurücksetzen? Alle offenen Deckel und Abrechnungen werden gelöscht!')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+}
+
+
+
+
+
+
+
+
+if (!loadKasseState()) {
+  fetch('vereinsheim_daten.txt?v=' + Date.now())
+    .then(response => {
+      if (!response.ok) throw new Error('Keine externe TXT gefunden');
+      return response.text();
+    })
+    .then(text => {
+      parseTxtData(text);
+    })
+    .catch(() => {
+      parseTxtData(DEFAULT_TXT);
+    });
+}
+
 
 </script>
 </body>
