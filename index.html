@@ -26,7 +26,6 @@
 
 
 
-
 <style>
   :root {
     --bg-main: #0f172a;
@@ -650,13 +649,17 @@
 
 <!-- VIEW 3: DETAILLIERTE ABRECHNUNG -->
 <div id="view-accounting" class="view">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-    <h2>📊 Detaillierte Kassenabrechnung (3 Bereiche)</h2>
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+    <div>
+      <h2>📊 Detaillierte Kassenabrechnung (3 Bereiche)</h2>
+      <p id="acc-teams-list" style="color:#60a5fa; font-weight:600; margin-top:4px;">Mannschaften: -</p>
+    </div>
     <div style="display:flex; gap:12px;">
       <button class="btn-3d btn-amber" onclick="exportAccountingTxt()">💾 Abrechnung als TXT</button>
-      <button class="btn-3d btn-blue" onclick="closeAccounting()">⬅️ Zurück zur Kasse</button>
+      <button class="btn-3d btn-blue" onclick="closeAccounting()">⬅ Zurück zur Kasse</button>
     </div>
   </div>
+
 
   <div class="card-3d" style="margin-bottom:20px; display:flex; justify-content:space-around; flex-wrap:wrap; gap:16px; text-align:center;">
     <div>
@@ -1519,6 +1522,10 @@ function closeAccounting() {
 }
 
 function renderAccounting() {
+  const teamsText = selectedTeams.length > 0 ? selectedTeams.join(' • ') : 'Keine ausgewählt';
+  const teamsEl = document.getElementById('acc-teams-list');
+  if (teamsEl) teamsEl.textContent = 'Mannschaften: ' + teamsText;
+
   const categories = ['SPORTLERHEIM', 'ESSEN', 'SONSTIGES'];
   let grandTotal = 0;
 
@@ -1572,13 +1579,16 @@ function renderAccounting() {
 
 function exportAccountingTxt() {
   const now = new Date().toLocaleString('de-DE');
+  const teamsText = selectedTeams.length > 0 ? selectedTeams.join(', ') : 'Keine ausgewählt';
   let lines = [
     '=========================================',
     'DETAILLIERTE KASSENABRECHNUNG',
     'Datum/Zeit: ' + now,
+    'Mannschaften: ' + teamsText,
     '=========================================',
     ''
   ];
+
 
   ['SPORTLERHEIM', 'ESSEN', 'SONSTIGES'].forEach(cat => {
     lines.push('--- BEREICH: ' + cat + ' ---');
