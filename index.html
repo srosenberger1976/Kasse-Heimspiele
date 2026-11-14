@@ -1051,37 +1051,84 @@ function toggleTeamSelection(team) {
 }
 
 function renderSetupPlayers() {
-  const area = document.getElementById('setup-player-area');
+  const container = document.getElementById('setup-players-container');
+  container.innerHTML = '';
+
   if (selectedTeams.length === 0) {
-    area.innerHTML = '<div style="color:var(--text-muted); padding:20px; text-align:center;">Bitte links zuerst 2 bis 4 Mannschaften auswählen.</div>';
+    container.innerHTML = '<p style="color:var(--muted);">Bitte wähle zuerst oben mindestens eine Mannschaft aus.</p>';
     return;
   }
 
-  area.innerHTML = '';
-  selectedTeams.forEach(team => {
-    const group = document.createElement('div');
-    group.className = 'team-player-group';
+  const seenPlayers = new Set();
 
-    const header = document.createElement('h4');
-    header.innerHTML = `<span>${team}</span><button class="btn-3d btn-slate" style="padding:4px 10px; font-size:0.8rem;" onclick="selectAllPlayersOfTeam('${team}')">Alle wählen</button>`;
-    group.appendChild(header);
-
-    const pills = document.createElement('div');
-    pills.className = 'player-pills';
-
-    (allTeams[team] || []).forEach(playerName => {
-      const isActive = (activePlayers[team] || []).some(p => p.name === playerName);
-      const pill = document.createElement('div');
-      pill.className = 'player-pill' + (isActive ? ' active' : '');
-      pill.textContent = playerName;
-      pill.onclick = () => togglePlayerActive(team, playerName);
-      pills.appendChild(pill);
+  selectedTeams.forEach(teamName => {
+    const allTeamPlayers = teamsData[teamName] || [];
+    // Nur Spieler behalten, die noch nicht bei einer vorherigen Mannschaft dabei waren:
+    const uniquePlayers = allTeamPlayers.filter(name => {
+      if (seenPlayers.has(name)) return false;
+      seenPlayers.add(name);
+      return true;
     });
 
-    group.appendChild(pills);
-    area.appendChild(group);
+    const box = document.createElement('div');
+    box.className = 'card-3d';
+    box.style.marginBottom = '16px';
+
+    const header = document.createElement('div');
+    header.style.display = 'flex';
+    header.style.justifyContent = 'space-between';
+    header.style.alignItems = 'center';
+    header.style.marginBottom = '12px';
+
+    const title = document.createElement('h3');
+    title.textContent = teamName;
+    title.style.color = '#60a5fa';
+
+    const selectAllBtn = document.createElement('button');
+    selectAllBtn.className = 'btn-3d btn-slate';
+    selectAllBtn.style.padding = '6px 12px';
+    selectAllBtn.style.fontSize = '0.85rem';
+    selectAllBtn.textContent = 'Alle wählen';
+    selectAllBtn.onclick = () => {
+      uniquePlayers.forEach(pName => {
+        if (!selectedSetupPlayers.some(sp => sp.name === pName)) {
+          selectedSetupPlayers.push({ name: pName, team: teamName });
+        }
+      });
+      renderSetupPlayers();
+    };
+
+    header.appendChild(title);
+    header.appendChild(selectAllBtn);
+    box.appendChild(header);
+
+    const grid = document.createElement('div');
+    grid.style.display = 'flex';
+    grid.style.flexWrap = 'wrap';
+    grid.style.gap = '10px';
+
+    uniquePlayers.forEach(pName => {
+      const isSelected = selectedSetupPlayers.some(sp => sp.name === pName);
+      const btn = document.createElement('button');
+      btn.className = 'btn-3d ' + (isSelected ? 'btn-green' : 'btn-slate');
+      btn.textContent = pName;
+      btn.onclick = () => {
+        const idx = selectedSetupPlayers.findIndex(sp => sp.name === pName);
+        if (idx > -1) {
+          selectedSetupPlayers.splice(idx, 1);
+        } else {
+          selectedSetupPlayers.push({ name: pName, team: teamName });
+        }
+        renderSetupPlayers();
+      };
+      grid.appendChild(btn);
+    });
+
+    box.appendChild(grid);
+    container.appendChild(box);
   });
 }
+
 
 function togglePlayerActive(team, playerName) {
   if (!activePlayers[team]) activePlayers[team] = [];
