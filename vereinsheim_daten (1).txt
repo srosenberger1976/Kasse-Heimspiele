@@ -1,0 +1,171 @@
+# MANNSCHAFTEN UND SPIELER
+
+[TEAM: Blue Bay]
+Felix Appeldorn
+Leon Kempel
+Leon Kempf
+Pascal Kempf
+Michael Gärtner
+Robin Laßmann
+Albert Krieger
+Andreas Gernhöfer
+Mona Laßmann
+Sven Appeldorn
+Niklas Matthias Schneider
+Joshua Müller
+
+[TEAM: DC Fraggles]
+Marcel Brach
+Oliver Anlitz
+Luca Lampmann
+Sebastian Seipel
+Adrian Kerner
+Ahmed Tariq
+Carsten Kraft
+Jasmin Brach
+Lucas Nüchter
+Manuel Nswoah
+Marcel Swoboda
+Markus Fechter
+Oliver Stachniuk
+Rolf Hesse
+Sejfudin Kadric
+Xhevdet Avdiu
+Noah Lampmann
+Steffen Seipel
+
+[TEAM: DC High Flyer]
+Jannik Gaul
+Cedric Paul
+Thorsten Paul
+David Rosenberger
+Stefan Rosenberger
+Frank Lursch
+Robin Bloß
+Joachim Hönig
+Frank Schüssler
+Andreas Röder
+Christian Tamas
+Dustin Rüffer
+Bernhard Prang
+Stefan Naumann
+Jens Raab
+Noah Pfahls
+
+[TEAM: DC LaPaloma]
+Svantje Hegenbart
+Anna Wendt
+Anne Pfeifer
+Jörg Dillmann
+Günther See
+Anna Goldbach
+Jessika Richter
+Joachim Bathon
+Daniel Goldbach
+Marc-Hendrik Dickel
+Mario Reichert
+Jay Goldbach
+Daniela See
+
+[TEAM: DC Oneshot]
+Bianca-Marie Cila
+Niklas Heiliger
+Eduard Widemann
+Robert Widemann
+Thomas Polzer
+Steven Grimm
+Ahmad Khawam
+Erika Popp
+Kristof Koch
+
+[TEAM: Eskalation 1]
+Karl-Heinz Kaiser
+Josef Jochner
+Susanne Kaiser
+Melissa Kaiser
+Markus Raguet
+Jennifer Schmidt-Prasch
+Patrick Schmidt
+Sonja Syllwasschy
+Tim Syllwasschy
+Viktoria Winkler
+Rebekka Hartung
+Daniela Kling
+Tabea Müller
+Doreen Winkler
+Patric Dietrich
+
+[TEAM: Eskalation 2]
+Anja Christ
+Anna Meister
+Isabell Hollweg
+Chantal Thölken
+Celina Jung
+Adam Tatai
+Nils Bartel
+Angela Urschek
+Helmut Walz
+Marcel Christ
+Ben Hebel
+Adriana Dumitrascu
+Adrian Levien
+
+[TEAM: Spassvogel]
+Patrick Lauenburger
+Julia Meier
+Sabrina Adrian
+Alexander Schmarr
+Ilhami Bilen
+Kai-Uwe Axt
+Markus Köhler
+Mareike Köhler
+Patrick Waldmann
+Andy Fehl
+Jan Obenhin
+Steffen Schum
+Reiner Lelito
+Sabrina Lelito
+Mete Ünlü
+Nadine Fehl
+
+# PREISLISTE (Name | Preis | Kategorie)
+[PREISE]
+Will Bräu Helles 0,33l | 2,50 | SPORTLERHEIM
+Rhön Radler 0,33l | 2,50 | SPORTLERHEIM
+Licher Pilsner 0,33l | 2,50 | SPORTLERHEIM
+Will Bräu Hefe Weizen 0,5l | 3,50 | SPORTLERHEIM
+Will Bräu Kristall Weizen 0,5l | 3,50 | SPORTLERHEIM
+Licher Alkoholfrei Isotonisch 0,33l | 2,50 | SPORTLERHEIM
+Will Bräu Weizen Alkoholfrei 0,5l | 3,50 | SPORTLERHEIM
+WYN Spritz Berry 0,33l | 2,50 | SPORTLERHEIM
+WYN Schorle 0,33l | 2,50 | SPORTLERHEIM
+WYN Spritz Aperitivo 0,33l | 2,50 | SPORTLERHEIM
+Malkmus Apfelwein Cola 0,33l | 2,50 | SPORTLERHEIM
+Malkmus Apfelwein Gespritzt 0,33l | 2,50 | SPORTLERHEIM
+Spezi 0,33l | 2,00 | SPORTLERHEIM
+Libella Orangenlimonade 0,33l | 2,00 | SPORTLERHEIM
+Coca Cola 0,33l | 2,00 | SPORTLERHEIM
+Rhön Sprudel 0,25l | 2,00 | SPORTLERHEIM
+Alasia Medium 1l | 4,00 | SPORTLERHEIM
+Coca Cola 1l | 4,00 | SPORTLERHEIM
+Bizzl Naturtrübe Zitrone 1l | 4,00 | SPORTLERHEIM
+Justus Brunnen Zitronenlimonade 0,7l | 3,00 | SPORTLERHEIM
+Hütchen | 2,50 | SPORTLERHEIM
+Hütchen 1,25 Liter | 20,00 | SPORTLERHEIM
+Hütchen 1,5 Liter | 25,00 | SPORTLERHEIM
+Schnaps | 2,00 | SPORTLERHEIM
+6 Schnäpse | 10,00 | SPORTLERHEIM
+10 Schnäpse | 20,00 | SPORTLERHEIM
+Pickup Choco & Milk | 1,00 | SPORTLERHEIM
+Pickup Original | 1,00 | SPORTLERHEIM
+Chio Chips Paprika | 1,00 | SPORTLERHEIM
+Haribo Cola Roulette | 1,00 | SPORTLERHEIM
+Jacky Cola | 2,50 | SONSTIGES
+Jacky Cola 1,25 Liter | 15,00 | SONSTIGES
+Jacky Cola 1,5 Liter | 20,00 | SONSTIGES
+Essen 3,00 € | 3,00 | ESSEN
+Essen 3,50 € | 3,50 | ESSEN
+Essen 4,00 € | 4,00 | ESSEN
+Essen 4,50 € | 4,50 | ESSEN
+Essen 5,00 € | 5,00 | ESSEN
+Essen 5,50 € | 5,50 | ESSEN
