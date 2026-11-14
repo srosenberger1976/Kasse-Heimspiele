@@ -1051,81 +1051,40 @@ function toggleTeamSelection(team) {
 }
 
 function renderSetupPlayers() {
-  const container = document.getElementById('setup-players-container');
-  container.innerHTML = '';
-
+  const area = document.getElementById('setup-player-area');
   if (selectedTeams.length === 0) {
-    container.innerHTML = '<p style="color:var(--muted);">Bitte wähle zuerst oben mindestens eine Mannschaft aus.</p>';
+    area.innerHTML = '<div style="color:var(--text-muted); padding:20px; text-align:center;">Bitte links zuerst 2 bis 4 Mannschaften auswählen.</div>';
     return;
   }
 
+  area.innerHTML = '';
   const seenPlayers = new Set();
 
-  selectedTeams.forEach(teamName => {
-    const allTeamPlayers = teamsData[teamName] || [];
-    // Nur Spieler behalten, die noch nicht bei einer vorherigen Mannschaft dabei waren:
-    const uniquePlayers = allTeamPlayers.filter(name => {
-      if (seenPlayers.has(name)) return false;
-      seenPlayers.add(name);
-      return true;
+  selectedTeams.forEach(team => {
+    const group = document.createElement('div');
+    group.className = 'team-player-group';
+
+    const header = document.createElement('h4');
+    header.innerHTML = `<span>${team}</span><button class="btn-3d btn-slate" style="padding:4px 10px; font-size:0.8rem;" onclick="selectAllPlayersOfTeam('${team}')">Alle wählen</button>`;
+    group.appendChild(header);
+
+    const pills = document.createElement('div');
+    pills.className = 'player-pills';
+
+    (allTeams[team] || []).forEach(playerName => {
+      if (seenPlayers.has(playerName)) return;
+      seenPlayers.add(playerName);
+
+      const isActive = (activePlayers[team] || []).some(p => p.name === playerName);
+      const pill = document.createElement('div');
+      pill.className = 'player-pill' + (isActive ? ' active' : '');
+      pill.textContent = playerName;
+      pill.onclick = () => togglePlayerActive(team, playerName);
+      pills.appendChild(pill);
     });
 
-    const box = document.createElement('div');
-    box.className = 'card-3d';
-    box.style.marginBottom = '16px';
-
-    const header = document.createElement('div');
-    header.style.display = 'flex';
-    header.style.justifyContent = 'space-between';
-    header.style.alignItems = 'center';
-    header.style.marginBottom = '12px';
-
-    const title = document.createElement('h3');
-    title.textContent = teamName;
-    title.style.color = '#60a5fa';
-
-    const selectAllBtn = document.createElement('button');
-    selectAllBtn.className = 'btn-3d btn-slate';
-    selectAllBtn.style.padding = '6px 12px';
-    selectAllBtn.style.fontSize = '0.85rem';
-    selectAllBtn.textContent = 'Alle wählen';
-    selectAllBtn.onclick = () => {
-      uniquePlayers.forEach(pName => {
-        if (!selectedSetupPlayers.some(sp => sp.name === pName)) {
-          selectedSetupPlayers.push({ name: pName, team: teamName });
-        }
-      });
-      renderSetupPlayers();
-    };
-
-    header.appendChild(title);
-    header.appendChild(selectAllBtn);
-    box.appendChild(header);
-
-    const grid = document.createElement('div');
-    grid.style.display = 'flex';
-    grid.style.flexWrap = 'wrap';
-    grid.style.gap = '10px';
-
-    uniquePlayers.forEach(pName => {
-      const isSelected = selectedSetupPlayers.some(sp => sp.name === pName);
-      const btn = document.createElement('button');
-      btn.className = 'btn-3d ' + (isSelected ? 'btn-green' : 'btn-slate');
-      btn.textContent = pName;
-      btn.onclick = () => {
-        const idx = selectedSetupPlayers.findIndex(sp => sp.name === pName);
-        if (idx > -1) {
-          selectedSetupPlayers.splice(idx, 1);
-        } else {
-          selectedSetupPlayers.push({ name: pName, team: teamName });
-        }
-        renderSetupPlayers();
-      };
-      grid.appendChild(btn);
-    });
-
-    box.appendChild(grid);
-    container.appendChild(box);
+    group.appendChild(pills);
+    area.appendChild(group);
   });
 }
 
@@ -1147,18 +1106,21 @@ function togglePlayerActive(team, playerName) {
 }
 
 function selectAllPlayersOfTeam(team) {
-  const roster = allTeams[team] || [];
-  activePlayers[team] = roster.map((name, i) => {
-    const existing = (activePlayers[team] || []).find(p => p.name === name);
-    return existing || {
-      id: 'p_' + Date.now() + '_' + i,
-      name,
-      items: [],
-      einwurf: 0
-    };
+  if (!activePlayers[team]) activePlayers[team] = [];
+  const alreadyInAnyTeam = new Set(
+    Object.values(activePlayers).flat().map(p => p.name)
+  );
+
+  (allTeams[team] || []).forEach(playerName => {
+    if (!alreadyInAnyTeam.has(playerName)) {
+      activePlayers[team].push({ name: playerName, orders: [], einwurfPaid: false });
+      alreadyInAnyTeam.add(playerName);
+    }
   });
+  saveState();
   renderSetupPlayers();
 }
+
 
 function startMatchday() {
  if (selectedTeams.length < 1) {
