@@ -128,6 +128,163 @@ Sabrina Lelito
 Mete Ünlü
 Nadine Fehl
 
+[TEAM: DC High Flyer 2]
+Stefan Rosenberger
+Jens Raab
+Andreas Röder
+Christian Tamas
+Stefan Naumann
+Dustin Rüffer
+Diana Rosenberger
+David Rosenberger
+Bernhard Prang
+Robin Blos
+Frank Schüssler
+
+[TEAM: DC Joschis]
+Frank Rott
+Rainer Rott
+Andre Henkel
+Stephan Gottwald
+Louis Gottwald
+Tatiana Rott
+Monika v. Münster
+Mischa Dorn
+
+[TEAM: DC Wolfsrudel]
+Sarah-Lynn Adams
+Magnus Brüning
+Manuela Koch
+Thorsten Koch
+Sabrina Dreher
+Kelsey Degryse
+Andy Gröger
+Steve Gröger
+Andre Zeller
+Michael Adams
+Chantal Bauer
+Sarah Daus
+Manuel Resch
+
+[TEAM: Bad Boyz 9.1]
+Armin Schönmeier
+Jan Schönmeier
+Kevin Konrad
+Philipp Rücker
+Florian Rücker
+Adrian Levien
+Gerry Gleiß
+Moritz Albert
+
+[TEAM: DC Knapp daneben Sterbfritz]
+Ulli Baute
+Andreas Storck
+Andreas Mock
+Jan Hartmann
+Martin Schalk
+Sonja Baute
+Oliver Mogel
+Sonja Neuendorf
+Wolfgang Richter
+Lucas Storck
+Jens Orth
+Janosch Hensel
+Dustin Schalk
+Michael Simon
+
+[TEAM: Dartschützen Oberzell]
+Sebastian Röder
+Pascal Roeder
+Niclas Lins
+Janick Lins
+Luca Hölzer
+Andreas Ziegler
+Tobias Klabouch
+Julian Dorn
+Phillipp Müller
+Raphael Herzog
+Tim Fehl
+
+[TEAM: Special Elite]
+Maximilian Härtl
+Tim Henkel
+Michael Härtl
+Michael Hellwig
+Nico Henkel
+Sascha Keller
+Sascha Riedl
+Oliver Stachniuk
+Sebastian Fey
+Sam-Noah Riedl
+Carina Frey
+Niko Klebe
+Andreas Ploep
+Sascha Meine
+Fabian Schweisser
+
+[TEAM: Schlüchterner Löwen]
+Nico Eckert
+Jasmin Hoyer
+Christian Freundlieb
+Sascha Jung
+Robert Gold
+Markus Spahn
+Sven Ihlow
+Mike Goldhorn
+Alex Fischer
+Bob Gelleszun
+Kevin Kirsch
+Andi Baier
+Max Baier
+
+[TEAM: UpTown 1]
+Dominique Wendler
+Erol Ilhan
+Jenny Vock
+Patrick Schiller
+Sebastian Naake
+Roman Kruczek
+Martin Böhm
+Nino Andriola
+
+[TEAM: Triple Nix]
+Sandy Härtl
+Lea Strömer
+Lana Bauer
+Andrea Bauer
+Saskia Riedl
+Bastian Schalk
+Luca Schalk
+Ralph Kreis
+Michael Konrad
+Jörg Müller
+Walter Zelk
+Tobias Zelk
+Jonas Fink
+
+[TEAM: Oldschool Legenden]
+Michael Spindler
+Peter Dziubek
+Peter Grüsemann
+Holger Swoboda
+Andreas Schmück
+Vladimir Rausch
+Jerome Spindler
+Rene Markgraf
+Marcel Swoboda
+Carsten Kraft
+
+[TEAM: Bad Boyz Nine]
+Tobias Schönmeier
+Stefan Rücker
+Sabine Rücker
+Karsten Konrad
+Thomas Krämer
+Eloy Härtl
+Mika Knoll
+Thomas Levien
+Alexander Lüttich
+
 # PREISLISTE (Name | Preis | Kategorie)
 [PREISE]
 Will Bräu Helles 0,33l | 2,50 | SPORTLERHEIM
