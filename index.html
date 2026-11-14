@@ -1553,8 +1553,18 @@ function exportAccountingTxt() {
   a.click();
 }
 
-// Initialisierung mit Standarddaten
-parseTxtData(DEFAULT_TXT);
+fetch('vereinsheim_daten.txt?v=' + Date.now())
+  .then(response => {
+    if (!response.ok) throw new Error('Keine externe TXT gefunden');
+    return response.text();
+  })
+  .then(text => {
+    parseTxtData(text);
+  })
+  .catch(() => {
+    parseTxtData(DEFAULT_TXT);
+  });
+
 </script>
 </body>
 </html>
