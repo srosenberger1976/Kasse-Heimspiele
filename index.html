@@ -1,4 +1,35 @@
-<!DOCTYPE html>
+function renderSetupPlayers() {
+  const area = document.getElementById('setup-player-area');
+  if (selectedTeams.length === 0) {
+    area.innerHTML = '<div style="color:var(--text-muted); padding:20px; text-align:center;">Bitte links zuerst 2 bis 4 Mannschaften auswählen.</div>';
+    return;
+  }
+
+  area.innerHTML = '';
+  selectedTeams.forEach(team => {
+    const group = document.createElement('div');
+    group.className = 'team-player-group';
+
+    const header = document.createElement('h4');
+    header.innerHTML = `<span>${team}</span><button class="btn-3d btn-slate" style="padding:4px 10px; font-size:0.8rem;" onclick="selectAllPlayersOfTeam('${team}')">Alle wählen</button>`;
+    group.appendChild(header);
+
+    const pills = document.createElement('div');
+    pills.className = 'player-pills';
+
+    (allTeams[team] || []).forEach(playerName => {
+      const isActive = (activePlayers[team] || []).some(p => p.name === playerName);
+      const pill = document.createElement('div');
+      pill.className = 'player-pill' + (isActive ? ' active' : '');
+      pill.textContent = playerName;
+      pill.onclick = () => togglePlayerActive(team, playerName);
+      pills.appendChild(pill);
+    });
+
+    group.appendChild(pills);
+    area.appendChild(group);
+  });
+}<!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8">
