@@ -330,30 +330,50 @@
     transform: translateY(-2px);
   }
 
-  .players-fullscreen-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 18px;
-    margin-top: 16px;
-  }
+ .players-fullscreen-grid {
+   display: grid;
+   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+   gap: 22px;
+   margin-top: 18px;
+ }
+ .player-pos-btn {
+   min-height: 145px;
+   flex-direction: column;
+   padding: 20px;
+   border-radius: 20px;
+   font-size: 1.35rem;
+   text-align: center;
+   overflow: hidden;
+ }
+ .player-pos-btn .saldo-tag {
+   font-size: 1.05rem;
+   background: rgba(0,0,0,0.35);
+   padding: 5px 14px;
+   border-radius: 20px;
+   margin-top: 8px;
+   font-weight: 700;
+ }
+ /* Rotes X für bezahlte Spieler */
+ .player-pos-btn.paid-crossed::before,
+ .player-pos-btn.paid-crossed::after {
+   content: '';
+   position: absolute;
+   top: 50%;
+   left: 50%;
+   width: 115%;
+   height: 7px;
+   background: #ef4444;
+   box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+   pointer-events: none;
+   z-index: 10;
+ }
+ .player-pos-btn.paid-crossed::before {
+   transform: translate(-50%, -50%) rotate(26deg);
+ }
+ .player-pos-btn.paid-crossed::after {
+   transform: translate(-50%, -50%) rotate(-26deg);
+ }
 
-  .player-pos-btn {
-    min-height: 115px;
-    flex-direction: column;
-    padding: 16px;
-    border-radius: 18px;
-    font-size: 1.2rem;
-    text-align: center;
-  }
-
-  .player-pos-btn .saldo-tag {
-    font-size: 0.95rem;
-    background: rgba(0,0,0,0.35);
-    padding: 4px 12px;
-    border-radius: 20px;
-    margin-top: 6px;
-    font-weight: 600;
-  }
 
   .einwurf-badge {
     background: #f59e0b;
@@ -1224,16 +1244,18 @@ function createPersonCardButton(person, type, teamName, btnColorClass) {
  const count = Number(person.einwurf) || 0;
  const einwurfSum = count * 2.0;
  const total = itemsSum + einwurfSum;
+ const isPaidCrossed = person.hasPaid && total === 0;
  const btn = document.createElement('button');
- btn.className = `btn-3d ${total > 0 ? 'btn-green' : btnColorClass} player-pos-btn`;
+ btn.className = `btn-3d ${total > 0 ? 'btn-green' : btnColorClass} player-pos-btn ${isPaidCrossed ? 'paid-crossed' : ''}`;
  btn.innerHTML = `
-  <span>${person.name}</span>
-  <span class="saldo-tag">Offen: ${formatEuro(total)}</span>
-  ${count > 0 ? `<span class="einwurf-badge">🪙 ${count}× Einwurf (+${formatEuro(einwurfSum)})</span>` : ''}
+   <span>${person.name}</span>
+   <span class="saldo-tag">Offen: ${formatEuro(total)}</span>
+   ${count > 0 ? `<span class="einwurf-badge">🪙 ${count}× Einwurf (+${formatEuro(einwurfSum)})</span>` : ''}
  `;
  btn.onclick = () => openPlayerModal(type, teamName, person.id);
  return btn;
 }
+
 
 
 // ================= NACHZÜGLER & GÄSTE MODAL =================
@@ -1426,6 +1448,8 @@ function addItemToPerson(item) {
     category: item.category
   };
   person.items.push(entry);
+ person.hasPaid = false;
+
   soldHistory.push({ ...entry, personName: person.name });
   renderPlayerReceipt();
 
@@ -1443,14 +1467,17 @@ saveKasseState();
 }
 
 function changeEinwurf(delta) {
- const person = getPersonObj(activeModalPerson);
- if (!person) return;
- person.einwurf = Math.max(0, (Number(person.einwurf) || 0) + delta);
- renderPlayerReceipt();
- renderPosView();
-saveKasseState();
-
+  const person = getPersonObj(activeModalPerson);
+  if (!person) return;
+  person.einwurf = Math.max(0, (Number(person.einwurf) || 0) + delta);
+  if (person.einwurf > 0) {
+    person.hasPaid = false;
+  }
+  renderPlayerReceipt();
+  renderPosView();
+  saveKasseState();
 }
+
 
 function renderPlayerReceipt() {
  const person = getPersonObj(activeModalPerson);
@@ -1514,12 +1541,13 @@ function payPlayerTab() {
   : '';
 
  if (confirm(`${person.name} bezahlt ${formatEuro(grandTotal)}${einwurfInfo}. Deckel jetzt auf 0,00 € setzen?`)) {
-  person.items = [];
-  person.einwurf = 0;
-  closePlayerModal();
- 
-saveKasseState();
-}
+   person.items = [];
+   person.einwurf = 0;
+   person.hasPaid = true;
+   closePlayerModal();
+   saveKasseState();
+ }
+
 }
 
 // ================= 3-FACH ABRECHNUNG =================
