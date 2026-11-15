@@ -2099,33 +2099,17 @@ function closeAssignCardModal() {
 }
 
 function getAllAvailableGuestNames() {
-  // Sammelt alle Spieler aus allen Teams (inkl. eventuellem [TEAM: Gäste]), die heute noch nicht aktiv sind
-  const activeNames = new Set();
-  selectedTeams.forEach(t => {
-    (activePlayers[t] || []).forEach(p => activeNames.add(p.name.toLowerCase()));
-  });
-  guests.forEach(g => activeNames.add(g.name.toLowerCase()));
-
-  const candidates = [];
-  Object.keys(allTeams).forEach(teamName => {
-    (allTeams[teamName] || []).forEach(playerName => {
-      if (!activeNames.has(playerName.toLowerCase())) {
-        candidates.push({ name: playerName, team: teamName });
-      }
-    });
-  });
-
-  // Alphabetisch sortieren (Gäste-Team zuerst, falls vorhanden)
-  candidates.sort((a, b) => {
-    const aIsGuest = a.team.toLowerCase().includes('gast') || a.team.toLowerCase().includes('gäste');
-    const bIsGuest = b.team.toLowerCase().includes('gast') || b.team.toLowerCase().includes('gäste');
-    if (aIsGuest && !bIsGuest) return -1;
-    if (!aIsGuest && bIsGuest) return 1;
-    return a.name.localeCompare(b.name, 'de');
-  });
-
-  return candidates;
+  // Zeigt NUR Gäste aus der heutigen Gäste-Auswahl, die noch keine Scanner-Karte verknüpft haben
+  return (guests || [])
+    .filter(g => !g.cardCode)
+    .map(g => ({
+      id: g.id,
+      name: g.name,
+      team: 'Ausgewählter Gast'
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'de'));
 }
+
 
 function renderAssignCardList() {
   const listEl = document.getElementById('assign-card-list');
@@ -2154,11 +2138,6 @@ function renderAssignCardList() {
   });
 }
 
-function confirmAssignCustomName() {
-  const inputVal = (document.getElementById('assign-card-input').value || '').trim();
-  finishAssignCard(inputVal);
-}
-
 function finishAssignCard(chosenName) {
   const rawCode = pendingCardCode;
   if (!rawCode) return;
@@ -2167,6 +2146,22 @@ function finishAssignCard(chosenName) {
     ? rawCode.split(',').map(p => p.trim()).reverse().join(' ')
     : rawCode;
 
+  // Prüfen, ob der gewählte Name schon in den heutigen Gästen existiert
+  const existingGuest = (guests || []).find(
+    g => g.name.toLowerCase() === (chosenName || '').toLowerCase() && !g.cardCode
+  );
+
+  if (existingGuest) {
+    existingGuest.cardCode = rawCode;
+    existingGuest.name = `${existingGuest.name} (${cleanCode})`;
+    closeAssignCardModal();
+    saveKasseState();
+    renderPosView();
+    openPlayerModal('GAST', 'GAST', existingGuest.id);
+    return;
+  }
+
+  // Falls neuer Name oben eingetippt wurde -> Neuen Gast anlegen
   const displayName = chosenName ? `${chosenName} (${cleanCode})` : cleanCode;
 
   const newGuest = {
@@ -2183,6 +2178,7 @@ function finishAssignCard(chosenName) {
   renderPosView();
   openPlayerModal('GAST', 'GAST', newGuest.id);
 }
+
 
 
 
