@@ -1371,36 +1371,48 @@ function renderMenuButtons() {
     activeMenuTab = groups[0].label;
   }
 
-  const colorMap = {
-    SPORTLERHEIM: 'btn-blue',
-    ESSEN: 'btn-green',
-    SONSTIGES: 'btn-purple'
-  };
+ const colorMap = {
+   SPORTLERHEIM: 'btn-blue',
+   ESSEN: 'btn-green',
+   SONSTIGES: 'btn-purple'
+ };
 
-  groups.forEach(grp => {
-    const tabBtn = document.createElement('button');
-    const isActive = grp.label === activeMenuTab;
-    tabBtn.className = `btn-3d ${colorMap[grp.category] || 'btn-blue'} cat-tab-btn` + (isActive ? ' active-cat' : '');
-    tabBtn.textContent = grp.label;
-    tabBtn.onclick = () => {
-      activeMenuTab = grp.label;
-      renderMenuButtons();
-    };
-    tabsContainer.appendChild(tabBtn);
-  });
+ // NEU: Eigene Farben für deine Untergruppen (Tabs & Artikel-Buttons)
+ const subColorMap = {
+   'Bier & Weizen': 'btn-amber',
+   'Spritz & Apfelwein': 'btn-red',
+   'Alkoholfrei': 'btn-blue',
+   'Schnaps & Hütchen': 'btn-purple',
+   'Snacks': 'btn-slate'
+ };
 
-  const filteredItems = menuItems.filter(item => {
-    const label = item.subcategory || (item.category === 'ESSEN' ? '🍔 Essen' : item.category === 'SONSTIGES' ? '🥃 Jacky' : '🍺 Sportlerheim');
-    return label === activeMenuTab;
-  });
+ groups.forEach(grp => {
+   const tabBtn = document.createElement('button');
+   const isActive = grp.label === activeMenuTab;
+   const btnColor = subColorMap[grp.label] || colorMap[grp.category] || 'btn-blue';
+   tabBtn.className = `btn-3d ${btnColor} cat-tab-btn` + (isActive ? ' active-cat' : '');
+   tabBtn.textContent = grp.label;
+   tabBtn.onclick = () => {
+     activeMenuTab = grp.label;
+     renderMenuButtons();
+   };
+   tabsContainer.appendChild(tabBtn);
+ });
 
-  filteredItems.forEach(item => {
-    const btn = document.createElement('button');
-    btn.className = `btn-3d ${colorMap[item.category] || 'btn-blue'} menu-item-btn`;
-    btn.innerHTML = `<span>${item.name}</span><span class="menu-item-price">${formatEuro(item.price)}</span>`;
-    btn.onclick = () => addItemToPerson(item);
-    itemsContainer.appendChild(btn);
-  });
+ const filteredItems = menuItems.filter(item => {
+   const label = item.subcategory || (item.category === 'ESSEN' ? '🍔 Essen' : item.category === 'SONSTIGES' ? '🥃 Jacky' : '🍺 Sportlerheim');
+   return label === activeMenuTab;
+ });
+
+ filteredItems.forEach(item => {
+   const btn = document.createElement('button');
+   const btnColor = subColorMap[item.subcategory] || colorMap[item.category] || 'btn-blue';
+   btn.className = `btn-3d ${btnColor} menu-item-btn`;
+   btn.innerHTML = `<span>${item.name}</span><span class="menu-item-price">${formatEuro(item.price)}</span>`;
+   btn.onclick = () => addItemToPerson(item);
+   itemsContainer.appendChild(btn);
+ });
+
 }
 
 
