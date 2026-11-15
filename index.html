@@ -817,6 +817,31 @@
           </div>
           <div style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;" id="player-total-breakdown"></div>
 
+ <div id="change-calc-box" style="margin-top:12px; padding:12px; background:rgba(59, 130, 246, 0.12); border:1px solid rgba(59, 130, 246, 0.35); border-radius:12px;">
+   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+     <span style="font-size:0.9rem; font-weight:700; color:#93c5fd;">💶 Gegeben (Bar):</span>
+     <input type="text" id="cash-given-input" inputmode="decimal" placeholder="0,00" oninput="updateChangeCalc()" style="width:110px; padding:6px 10px; text-align:right; font-weight:800; font-size:1.05rem;">
+   </div>
+   <div style="display:flex; gap:6px; margin-bottom:8px;">
+     <button class="btn-3d btn-slate" style="flex:1; padding:6px 4px; font-size:0.85rem;" onclick="setCashGiven(5)">5 €</button>
+     <button class="btn-3d btn-slate" style="flex:1; padding:6px 4px; font-size:0.85rem;" onclick="setCashGiven(10)">10 €</button>
+     <button class="btn-3d btn-slate" style="flex:1; padding:6px 4px; font-size:0.85rem;" onclick="setCashGiven(20)">20 €</button>
+     <button class="btn-3d btn-slate" style="flex:1; padding:6px 4px; font-size:0.85rem;" onclick="setCashGiven(50)">50 €</button>
+     <button class="btn-3d btn-red" style="padding:6px 10px; font-size:0.85rem;" onclick="setCashGiven(0)">C</button>
+   </div>
+   <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed rgba(255,255,255,0.15); padding-top:6px;">
+     <span style="font-size:0.95rem; font-weight:700;">Rückgeld:</span>
+     <span id="cash-change-output" style="font-size:1.25rem; font-weight:800; color:#fbbf24;">0,00 €</span>
+   </div>
+ </div>
+
+
+
+
+
+
+
+
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px;">
             <button class="btn-3d btn-blue" onclick="closePlayerModal()">💾 Speichern & Zurück</button>
             <button class="btn-3d btn-green" onclick="payPlayerTab()">💶 Jetzt Bezahlen</button>
@@ -1397,6 +1422,17 @@ function closeAddPersonModal() {
   document.getElementById('add-person-modal').classList.remove('open');
 }
 
+
+
+
+
+
+
+
+
+
+
+
 // ================= SPEISEKARTE & DECKEL MODAL =================
 function getPersonObj(meta) {
   if (meta.type === 'GAST') {
@@ -1405,18 +1441,68 @@ function getPersonObj(meta) {
   return (activePlayers[meta.teamName] || []).find(p => p.id === meta.personId);
 }
 
+function setCashGiven(amount) {
+  const input = document.getElementById('cash-given-input');
+  if (!input) return;
+  input.value = amount > 0 ? amount.toFixed(2).replace('.', ',') : '';
+  updateChangeCalc();
+}
+
+function updateChangeCalc() {
+  const input = document.getElementById('cash-given-input');
+  const outEl = document.getElementById('cash-change-output');
+  const boxEl = document.getElementById('change-calc-box');
+  if (!input || !outEl || !activeModalPerson) return;
+
+  const person = getPersonObj(activeModalPerson);
+  if (!person) return;
+
+  const itemsTotal = person.items.reduce((s, i) => s + i.price, 0);
+  const einwurfTotal = (Number(person.einwurf) || 0) * 2.0;
+  const prepaid = isPrepaidMode ? (Number(person.prepaid) || 0) : 0;
+  const diff = (itemsTotal + einwurfTotal) - prepaid;
+
+  if (boxEl) boxEl.style.display = diff < 0 ? 'none' : 'block';
+
+  const raw = input.value.replace(',', '.').trim();
+  const given = parseFloat(raw);
+
+  if (isNaN(given) || given <= 0) {
+    outEl.style.color = '#94a3b8';
+    outEl.textContent = '0,00 €';
+    return;
+  }
+
+  const change = given - Math.max(0, diff);
+  if (change < 0) {
+    outEl.style.color = '#ef4444';
+    outEl.textContent = `Fehlt: ${formatEuro(Math.abs(change))}`;
+  } else {
+    outEl.style.color = '#fbbf24';
+    outEl.textContent = formatEuro(change);
+  }
+}
+
 function openPlayerModal(type, teamName, personId) {
   activeModalPerson = { type, teamName, personId };
   const person = getPersonObj(activeModalPerson);
   if (!person) return;
-
   document.getElementById('modal-player-name').textContent = person.name;
   document.getElementById('modal-player-team').textContent = type === 'GAST' ? 'Gastspieler' : teamName;
-
+  const cashInput = document.getElementById('cash-given-input');
+  if (cashInput) cashInput.value = '';
   renderMenuButtons();
   renderPlayerReceipt();
   document.getElementById('pos-modal').classList.add('open');
 }
+
+
+
+
+
+
+
+
 
 function closePlayerModal() {
   document.getElementById('pos-modal').classList.remove('open');
@@ -1503,6 +1589,19 @@ function renderMenuButtons() {
 function addItemToPerson(item) {
   const person = getPersonObj(activeModalPerson);
   if (!person) return;
+
+  if (isPrepaidMode) {
+    const itemsSum = person.items.reduce((sum, it) => sum + it.price, 0);
+    const einwurfSum = (Number(person.einwurf) || 0) * 2.0;
+    const prepaid = Number(person.prepaid) || 0;
+    const restGuthaben = prepaid - (itemsSum + einwurfSum);
+
+    if (restGuthaben < item.price) {
+      alert(`Nicht genug Guthaben! Verfügbar: ${formatEuro(restGuthaben)} – benötigt: ${formatEuro(item.price)}. Bitte zuerst Vorkasse einzahlen.`);
+      return;
+    }
+  }
+
   const entry = {
     entryId: 'e_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
     name: item.name,
@@ -1510,13 +1609,12 @@ function addItemToPerson(item) {
     category: item.category
   };
   person.items.push(entry);
- person.hasPaid = false;
-
+  person.hasPaid = false;
   soldHistory.push({ ...entry, personName: person.name });
   renderPlayerReceipt();
-
-saveKasseState();
+  saveKasseState();
 }
+
 
 function removeItemFromPerson(entryId) {
   const person = getPersonObj(activeModalPerson);
@@ -1531,6 +1629,19 @@ saveKasseState();
 function changeEinwurf(delta) {
   const person = getPersonObj(activeModalPerson);
   if (!person) return;
+
+  if (delta > 0 && isPrepaidMode) {
+    const itemsSum = person.items.reduce((sum, it) => sum + it.price, 0);
+    const einwurfSum = (Number(person.einwurf) || 0) * 2.0;
+    const prepaid = Number(person.prepaid) || 0;
+    const restGuthaben = prepaid - (itemsSum + einwurfSum);
+
+    if (restGuthaben < 2.0) {
+      alert(`Nicht genug Guthaben für Einwurfgeld! Verfügbar: ${formatEuro(restGuthaben)}. Bitte zuerst Vorkasse einzahlen.`);
+      return;
+    }
+  }
+
   person.einwurf = Math.max(0, (Number(person.einwurf) || 0) + delta);
   if (person.einwurf > 0) {
     person.hasPaid = false;
@@ -1539,6 +1650,7 @@ function changeEinwurf(delta) {
   renderPosView();
   saveKasseState();
 }
+
 
 
 function renderPlayerReceipt() {
@@ -1591,7 +1703,10 @@ function renderPlayerReceipt() {
   document.getElementById('player-total-breakdown').textContent = isPrepaidMode
     ? `Verzehr & Einwurf: ${formatEuro(itemsTotal + einwurfTotal)} − Vorkasse: ${formatEuro(prepaid)}`
     : (count > 0 ? `Verzehr: ${formatEuro(itemsTotal)} + Einwurfgeld (${count}×): ${formatEuro(einwurfTotal)}` : `Verzehr: ${formatEuro(itemsTotal)}`);
+
+ updateChangeCalc();
 }
+
 
 function payPlayerTab() {
   const person = getPersonObj(activeModalPerson);
