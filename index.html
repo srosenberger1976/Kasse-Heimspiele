@@ -2118,15 +2118,13 @@ function closeAssignCardModal() {
 function getAllAvailableGuestNames() {
   const list = [];
 
-  // 1. Ausgewählte Spieler aus einer "Gäste"-Mannschaft (ohne Karte)
+  // 1. Alle ausgewählten Spieler aller aktiven Mannschaften, die noch keine Karte haben
   (selectedTeams || []).forEach(team => {
-    if (team.toLowerCase().includes('gast') || team.toLowerCase().includes('gäste')) {
-      (activePlayers[team] || []).forEach(p => {
-        if (!p.cardCode) {
-          list.push({ id: p.id, name: p.name, team: team, source: 'TEAM' });
-        }
-      });
-    }
+    (activePlayers[team] || []).forEach(p => {
+      if (!p.cardCode) {
+        list.push({ id: p.id, name: p.name, team: team, source: 'TEAM' });
+      }
+    });
   });
 
   // 2. Zusätzlich manuell angelegte Gäste aus dem Gäste-Tab (ohne Karte)
