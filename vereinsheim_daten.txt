@@ -285,44 +285,44 @@ Mika Knoll
 Thomas Levien
 Alexander Lüttich
 
-# PREISLISTE (Name | Preis | Kategorie)
+# PREISLISTE (Name | Preis | Kategorie | Untergruppe)
 [PREISE]
-Will Bräu Helles 0,33l | 2,50 | SPORTLERHEIM
-Rhön Radler 0,33l | 2,50 | SPORTLERHEIM
-Licher Pilsner 0,33l | 2,50 | SPORTLERHEIM
-Will Bräu Hefe Weizen 0,5l | 3,50 | SPORTLERHEIM
-Will Bräu Kristall Weizen 0,5l | 3,50 | SPORTLERHEIM
-Licher Alkoholfrei Isotonisch 0,33l | 2,50 | SPORTLERHEIM
-Will Bräu Weizen Alkoholfrei 0,5l | 3,50 | SPORTLERHEIM
-WYN Spritz Berry 0,33l | 2,50 | SPORTLERHEIM
-WYN Schorle 0,33l | 2,50 | SPORTLERHEIM
-WYN Spritz Aperitivo 0,33l | 2,50 | SPORTLERHEIM
-Malkmus Apfelwein Cola 0,33l | 2,50 | SPORTLERHEIM
-Malkmus Apfelwein Gespritzt 0,33l | 2,50 | SPORTLERHEIM
-Spezi 0,33l | 2,00 | SPORTLERHEIM
-Libella Orangenlimonade 0,33l | 2,00 | SPORTLERHEIM
-Coca Cola 0,33l | 2,00 | SPORTLERHEIM
-Rhön Sprudel 0,25l | 2,00 | SPORTLERHEIM
-Alasia Medium 1l | 4,00 | SPORTLERHEIM
-Coca Cola 1l | 4,00 | SPORTLERHEIM
-Bizzl Naturtrübe Zitrone 1l | 4,00 | SPORTLERHEIM
-Justus Brunnen Zitronenlimonade 0,7l | 3,00 | SPORTLERHEIM
-Hütchen | 2,50 | SPORTLERHEIM
-Hütchen 1,25 Liter | 20,00 | SPORTLERHEIM
-Hütchen 1,5 Liter | 25,00 | SPORTLERHEIM
-Schnaps | 2,00 | SPORTLERHEIM
-6 Schnäpse | 10,00 | SPORTLERHEIM
-10 Schnäpse | 20,00 | SPORTLERHEIM
-Pickup Choco & Milk | 1,00 | SPORTLERHEIM
-Pickup Original | 1,00 | SPORTLERHEIM
-Chio Chips Paprika | 1,00 | SPORTLERHEIM
-Haribo Cola Roulette | 1,00 | SPORTLERHEIM
-Jacky Cola | 2,50 | SONSTIGES
-Jacky Cola 1,25 Liter | 15,00 | SONSTIGES
-Jacky Cola 1,5 Liter | 20,00 | SONSTIGES
-Essen 3,00 € | 3,00 | ESSEN
-Essen 3,50 € | 3,50 | ESSEN
-Essen 4,00 € | 4,00 | ESSEN
-Essen 4,50 € | 4,50 | ESSEN
-Essen 5,00 € | 5,00 | ESSEN
-Essen 5,50 € | 5,50 | ESSEN
+Will Bräu Helles 0,33l | 2,50 | SPORTLERHEIM | Bier & Weizen
+Rhön Radler 0,33l | 2,50 | SPORTLERHEIM | Bier & Weizen
+Licher Pilsner 0,33l | 2,50 | SPORTLERHEIM | Bier & Weizen
+Will Bräu Hefe Weizen 0,5l | 3,50 | SPORTLERHEIM | Bier & Weizen
+Will Bräu Kristall Weizen 0,5l | 3,50 | SPORTLERHEIM | Bier & Weizen
+Licher Alkoholfrei Isotonisch 0,33l | 2,50 | SPORTLERHEIM | Bier & Weizen
+Will Bräu Weizen Alkoholfrei 0,5l | 3,50 | SPORTLERHEIM | Bier & Weizen
+WYN Spritz Berry 0,33l | 2,50 | SPORTLERHEIM | Spritz & Apfelwein
+WYN Schorle 0,33l | 2,50 | SPORTLERHEIM | Spritz & Apfelwein
+WYN Spritz Aperitivo 0,33l | 2,50 | SPORTLERHEIM | Spritz & Apfelwein
+Malkmus Apfelwein Cola 0,33l | 2,50 | SPORTLERHEIM | Spritz & Apfelwein
+Malkmus Apfelwein Gespritzt 0,33l | 2,50 | SPORTLERHEIM | Spritz & Apfelwein
+Spezi 0,33l | 2,00 | SPORTLERHEIM | Alkoholfrei
+Libella Orangenlimonade 0,33l | 2,00 | SPORTLERHEIM | Alkoholfrei
+Coca Cola 0,33l | 2,00 | SPORTLERHEIM | Alkoholfrei
+Rhön Sprudel 0,25l | 2,00 | SPORTLERHEIM | Alkoholfrei
+Alasia Medium 1l | 4,00 | SPORTLERHEIM | Alkoholfrei
+Coca Cola 1l | 4,00 | SPORTLERHEIM | Alkoholfrei
+Bizzl Naturtrübe Zitrone 1l | 4,00 | SPORTLERHEIM | Alkoholfrei
+Justus Brunnen Zitronenlimonade 0,7l | 3,00 | SPORTLERHEIM | Alkoholfrei
+Hütchen | 2,50 | SPORTLERHEIM | Schnaps & Hütchen
+Hütchen 1,25 Liter | 20,00 | SPORTLERHEIM | Schnaps & Hütchen
+Hütchen 1,5 Liter | 25,00 | SPORTLERHEIM | Schnaps & Hütchen
+Schnaps | 2,00 | SPORTLERHEIM | Schnaps & Hütchen
+6 Schnäpse | 10,00 | SPORTLERHEIM | Schnaps & Hütchen
+10 Schnäpse | 20,00 | SPORTLERHEIM | Schnaps & Hütchen
+Pickup Choco & Milk | 1,00 | SPORTLERHEIM | Snacks
+Pickup Original | 1,00 | SPORTLERHEIM | Snacks
+Chio Chips Paprika | 1,00 | SPORTLERHEIM | Snacks
+Haribo Cola Roulette | 1,00 | SPORTLERHEIM | Snacks
+Jacky Cola | 2,50 | SONSTIGES | Jacky
+Jacky Cola 1,25 Liter | 15,00 | SONSTIGES | Jacky
+Jacky Cola 1,5 Liter | 20,00 | SONSTIGES | Jacky
+Essen 3,00 € | 3,00 | ESSEN | Essen
+Essen 3,50 € | 3,50 | ESSEN | Essen
+Essen 4,00 € | 4,00 | ESSEN | Essen
+Essen 4,50 € | 4,50 | ESSEN | Essen
+Essen 5,00 € | 5,00 | ESSEN | Essen
+Essen 5,50 € | 5,50 | ESSEN | Essen
