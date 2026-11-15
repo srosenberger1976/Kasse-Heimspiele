@@ -23,6 +23,7 @@
 
 
 
+<script src="https://unpkg.com"></script>
 
 
 
@@ -668,9 +669,16 @@
     </div>
   </div>
 
-  <div style="margin-top: 14px;">
-    <input type="text" id="pos-search-input" placeholder="🔍 Spielernamen schnell suchen..." oninput="renderPosView()">
-  </div>
+
+
+
+
+ <div style="margin-top: 14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+   <input type="text" id="pos-search-input" placeholder="🔍 Spielernamen schnell suchen..." oninput="renderPosView()" style="flex:1; min-width:200px;">
+   <span id="scanner-status-badge" style="background:rgba(16, 185, 129, 0.15); border:1px solid #10b981; color:#34d399; padding:10px 14px; border-radius:12px; font-weight:700; font-size:0.9rem; white-space:nowrap;">🟢 Scanner bereit</span>
+   <button class="btn-3d btn-blue" style="padding:11px 16px; font-size:0.95rem;" onclick="openCameraScanner()">📷 Kamera-Scan</button>
+ </div>
+
 
   <div class="players-fullscreen-grid" id="pos-players-grid"></div>
 
@@ -862,6 +870,21 @@
     <div id="add-person-body"></div>
   </div>
 </div>
+
+<!-- MODAL: KAMERA BARCODE SCANNER -->
+<div id="camera-scan-modal" class="modal-backdrop">
+  <div class="modal-box" style="max-width:500px; text-align:center;">
+    <div class="modal-header">
+      <h3>📷 Karte vor die Kamera halten</h3>
+      <button class="btn-3d btn-slate" onclick="closeCameraScanner()">✖</button>
+    </div>
+    <div id="qr-reader" style="width:100%; border-radius:14px; overflow:hidden; background:#000;"></div>
+    <p id="camera-scan-hint" style="color:var(--text-muted); font-size:0.85rem; margin-top:12px;">Halte den Barcode ruhig in die Mitte des Bildes.</p>
+  </div>
+</div>
+
+
+
 
 <script>
 // ================= STANDARD TXT INHALT =================
@@ -1933,7 +1956,176 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// ================= BARCODE SCANNER INTEGRATION =================
+let scanBuffer = '';
+let scanLastTime = 0;
 
+document.addEventListener('keydown', function(e) {
+  // Eingaben in echte Textfelder (z.B. Suchfeld oder Rückgeld-Eingabe) nicht abfangen
+  const tag = document.activeElement ? document.activeElement.tagName : '';
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+  const now = Date.now();
+  // Scanner tippt extrem schnell (< 60ms pro Zeichen); bei langsamer Hand-Eingabe Puffer zurücksetzen
+  if (now - scanLastTime > 80) {
+    scanBuffer = '';
+  }
+  scanLastTime = now;
+
+  if (e.key === 'Enter') {
+    if (scanBuffer.length >= 3) {
+      e.preventDefault();
+      handleBarcodeScan(scanBuffer.trim());
+    }
+    scanBuffer = '';
+  } else if (e.key.length === 1) {
+    scanBuffer += e.key;
+  }
+});
+
+function normalizeScannedName(raw) {
+  // Wandelt "Gaul, Jannik" automatisch in "jannik gaul" um
+  if (raw.includes(',')) {
+    const parts = raw.split(',').map(p => p.trim()).filter(Boolean);
+    if (parts.length === 2) {
+      return (parts[1] + ' ' + parts[0]).toLowerCase();
+    }
+  }
+  return raw.trim().toLowerCase();
+}
+
+function handleBarcodeScan(scannedText) {
+  // Nur im Kassenbetrieb (VIEW 2) reagieren
+  const posView = document.getElementById('view-pos');
+  if (!posView || !posView.classList.contains('active')) return;
+  flashScannerBadge(scannedText);
+
+  const searchNorm = normalizeScannedName(scannedText);
+
+  // 1. Falls bereits ein Spieler-Fenster offen ist, dieses zuerst schließen
+  if (activeModalPerson) {
+    closePlayerModal();
+  }
+
+  // 2. Zuerst in allen bereits aktiven Spielern der ausgewählten Teams suchen
+  for (const team of selectedTeams) {
+    const foundActive = (activePlayers[team] || []).find(
+      p => normalizeScannedName(p.name) === searchNorm
+    );
+    if (foundActive) {
+      openPlayerModal('TEAM', team, foundActive.id);
+      return;
+    }
+  }
+
+  // 3. Falls Spieler im Team-Kader steht, aber noch nicht aktiviert war -> automatisch aktivieren
+  for (const team of selectedTeams) {
+    const foundRoster = (allTeams[team] || []).find(
+      name => normalizeScannedName(name) === searchNorm
+    );
+    if (foundRoster) {
+      if (!activePlayers[team]) activePlayers[team] = [];
+      const newPlayer = {
+        id: 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        name: foundRoster,
+        items: [],
+        einwurf: 0,
+        prepaid: 0
+      };
+      activePlayers[team].push(newPlayer);
+      saveKasseState();
+      renderPosView();
+      openPlayerModal('TEAM', team, newPlayer.id);
+      return;
+    }
+  }
+
+  // 4. In bereits angelegten Gästen suchen (z.B. "Gast-7" oder "Gast-9")
+  const foundGuest = guests.find(
+    g => normalizeScannedName(g.name) === searchNorm
+  );
+  if (foundGuest) {
+    openPlayerModal('GAST', 'GAST', foundGuest.id);
+    return;
+  }
+
+  // 5. Wenn eine Gast-Karte (oder ein unbekannter Code) gescannt wird -> Gast automatisch neu anlegen
+  const cleanDisplayName = scannedText.includes(',')
+    ? scannedText.split(',').map(p => p.trim()).reverse().join(' ')
+    : scannedText.trim();
+
+  const newGuest = {
+    id: 'g_' + Date.now(),
+    name: cleanDisplayName,
+    items: [],
+    einwurf: 0,
+    prepaid: 0
+  };
+  guests.push(newGuest);
+  saveKasseState();
+  renderPosView();
+  openPlayerModal('GAST', 'GAST', newGuest.id);
+}
+
+
+// Visuelles Feedback auf dem Badge, wenn ein Scan erkannt wurde
+function flashScannerBadge(text) {
+  const badge = document.getElementById('scanner-status-badge');
+  if (!badge) return;
+  badge.textContent = '✅ Gelesen: ' + text;
+  badge.style.background = 'rgba(59, 130, 246, 0.3)';
+  badge.style.borderColor = '#60a5fa';
+  badge.style.color = '#fff';
+  setTimeout(() => {
+    badge.textContent = '🟢 Scanner bereit';
+    badge.style.background = 'rgba(16, 185, 129, 0.15)';
+    badge.style.borderColor = '#10b981';
+    badge.style.color = '#34d399';
+  }, 2500);
+}
+
+// ================= KAMERA SCANNER (HANDY / TABLET) =================
+let html5QrScanner = null;
+
+function openCameraScanner() {
+  if (typeof Html5Qrcode === 'undefined') {
+    alert('Kamera-Bibliothek konnte nicht geladen werden. Bitte Internetverbindung prüfen.');
+    return;
+  }
+  document.getElementById('camera-scan-modal').classList.add('open');
+  html5QrScanner = new Html5Qrcode('qr-reader');
+
+  html5QrScanner.start(
+    { facingMode: 'environment' },
+    {
+      fps: 10,
+      qrbox: { width: 280, height: 140 },
+      formatsToSupport: [ Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.EAN_13 ]
+    },
+    (decodedText) => {
+      closeCameraScanner();
+      flashScannerBadge(decodedText);
+      handleBarcodeScan(decodedText);
+    },
+    () => {}
+  ).catch((err) => {
+    alert('Kamera konnte nicht gestartet werden (Hinweis: HTTPS erforderlich und Kamerazugriff erlauben).\nFehler: ' + err);
+    closeCameraScanner();
+  });
+}
+
+function closeCameraScanner() {
+  const modal = document.getElementById('camera-scan-modal');
+  if (modal) modal.classList.remove('open');
+  if (html5QrScanner) {
+    html5QrScanner.stop().then(() => {
+      html5QrScanner.clear();
+      html5QrScanner = null;
+    }).catch(() => {
+      html5QrScanner = null;
+    });
+  }
+}
 
 
 </script>
