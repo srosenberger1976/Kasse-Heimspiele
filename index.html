@@ -884,6 +884,23 @@
   </div>
 </div>
 
+<!-- MODAL: GAST-KARTE EINEM SPIELER ZUORDNEN -->
+<div id="assign-card-modal" class="modal-backdrop">
+  <div class="modal-box" style="max-width:520px;">
+    <div class="modal-header">
+      <h3 id="assign-card-title">💳 Karte zuordnen</h3>
+      <button class="btn-3d btn-slate" onclick="closeAssignCardModal()">✖</button>
+    </div>
+    <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:12px;">
+      Wähle einen vorhandenen Spieler aus der Liste oder gib einen neuen Namen ein:
+    </p>
+    <div style="display:flex; gap:8px; margin-bottom:14px;">
+      <input type="text" id="assign-card-input" placeholder="🔍 Suchen oder neuen Gastnamen eintippen..." oninput="renderAssignCardList()" style="flex:1;">
+      <button class="btn-3d btn-green" style="padding:10px 14px;" onclick="confirmAssignCustomName()">✅ Übernehmen</button>
+    </div>
+    <div id="assign-card-list" style="max-height:280px; overflow-y:auto; display:grid; grid-template-columns:1fr 1fr; gap:8px;"></div>
+  </div>
+</div>
 
 
 
@@ -2041,32 +2058,132 @@ function handleBarcodeScan(scannedText) {
     }
   }
 
-  // 4. In bereits angelegten Gästen suchen (z.B. "Gast-7" oder "Gast-9")
+
+
+
+
+
+
+
+
+  // 4. In bereits angelegten Gästen suchen (entweder über Name oder über die hinterlegte Karten-ID)
   const foundGuest = guests.find(
-    g => normalizeScannedName(g.name) === searchNorm
+    g => normalizeScannedName(g.name) === searchNorm ||
+         (g.cardCode && g.cardCode.toLowerCase() === scannedText.trim().toLowerCase())
   );
   if (foundGuest) {
     openPlayerModal('GAST', 'GAST', foundGuest.id);
     return;
   }
 
-  // 5. Wenn eine Gast-Karte (oder ein unbekannter Code) gescannt wird -> Gast automatisch neu anlegen
-  const cleanDisplayName = scannedText.includes(',')
-    ? scannedText.split(',').map(p => p.trim()).reverse().join(' ')
-    : scannedText.trim();
+  // 5. Neue Gast-Karte wurde gescannt -> Auswahlfenster mit Liste öffnen
+  openAssignCardModal(scannedText.trim());
+}
+
+// ================= GAST-KARTE AUSWAHLFENSTER =================
+let pendingCardCode = '';
+
+function openAssignCardModal(rawCode) {
+  pendingCardCode = rawCode;
+  document.getElementById('assign-card-title').textContent = `💳 Karte "${rawCode}" zuordnen`;
+  const input = document.getElementById('assign-card-input');
+  input.value = '';
+  renderAssignCardList();
+  document.getElementById('assign-card-modal').classList.add('open');
+  setTimeout(() => input.focus(), 100);
+}
+
+function closeAssignCardModal() {
+  document.getElementById('assign-card-modal').classList.remove('open');
+  pendingCardCode = '';
+}
+
+function getAllAvailableGuestNames() {
+  // Sammelt alle Spieler aus allen Teams (inkl. eventuellem [TEAM: Gäste]), die heute noch nicht aktiv sind
+  const activeNames = new Set();
+  selectedTeams.forEach(t => {
+    (activePlayers[t] || []).forEach(p => activeNames.add(p.name.toLowerCase()));
+  });
+  guests.forEach(g => activeNames.add(g.name.toLowerCase()));
+
+  const candidates = [];
+  Object.keys(allTeams).forEach(teamName => {
+    (allTeams[teamName] || []).forEach(playerName => {
+      if (!activeNames.has(playerName.toLowerCase())) {
+        candidates.push({ name: playerName, team: teamName });
+      }
+    });
+  });
+
+  // Alphabetisch sortieren (Gäste-Team zuerst, falls vorhanden)
+  candidates.sort((a, b) => {
+    const aIsGuest = a.team.toLowerCase().includes('gast') || a.team.toLowerCase().includes('gäste');
+    const bIsGuest = b.team.toLowerCase().includes('gast') || b.team.toLowerCase().includes('gäste');
+    if (aIsGuest && !bIsGuest) return -1;
+    if (!aIsGuest && bIsGuest) return 1;
+    return a.name.localeCompare(b.name, 'de');
+  });
+
+  return candidates;
+}
+
+function renderAssignCardList() {
+  const listEl = document.getElementById('assign-card-list');
+  const query = (document.getElementById('assign-card-input').value || '').trim().toLowerCase();
+  listEl.innerHTML = '';
+
+  const candidates = getAllAvailableGuestNames().filter(
+    c => !query || c.name.toLowerCase().includes(query) || c.team.toLowerCase().includes(query)
+  );
+
+  if (candidates.length === 0) {
+    listEl.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:16px;">Kein Treffer in der Liste – oben einfach auf „✅ Übernehmen“ klicken, um den Namen neu anzulegen.</div>';
+    return;
+  }
+
+  candidates.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'btn-3d btn-slate';
+    btn.style.cssText = 'flex-direction:column; padding:10px; text-align:center; font-size:0.95rem;';
+    btn.innerHTML = `
+      <span>${c.name}</span>
+      <span style="font-size:0.75rem; color:#94a3b8; font-weight:500;">${c.team}</span>
+    `;
+    btn.onclick = () => finishAssignCard(c.name);
+    listEl.appendChild(btn);
+  });
+}
+
+function confirmAssignCustomName() {
+  const inputVal = (document.getElementById('assign-card-input').value || '').trim();
+  finishAssignCard(inputVal);
+}
+
+function finishAssignCard(chosenName) {
+  const rawCode = pendingCardCode;
+  if (!rawCode) return;
+
+  const cleanCode = rawCode.includes(',')
+    ? rawCode.split(',').map(p => p.trim()).reverse().join(' ')
+    : rawCode;
+
+  const displayName = chosenName ? `${chosenName} (${cleanCode})` : cleanCode;
 
   const newGuest = {
     id: 'g_' + Date.now(),
-    name: cleanDisplayName,
+    name: displayName,
+    cardCode: rawCode,
     items: [],
     einwurf: 0,
     prepaid: 0
   };
   guests.push(newGuest);
+  closeAssignCardModal();
   saveKasseState();
   renderPosView();
   openPlayerModal('GAST', 'GAST', newGuest.id);
 }
+
 
 
 // Visuelles Feedback auf dem Badge, wenn ein Scan erkannt wurde
