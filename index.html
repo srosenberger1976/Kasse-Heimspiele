@@ -610,10 +610,20 @@
         <h2>📋 Spieltag einrichten</h2>
         <p style="color:var(--text-muted); margin-top:4px;">1. Optional TXT-Datei laden &nbsp;|&nbsp; 2. 2 bis 4 Mannschaften wählen &nbsp;|&nbsp; 3. Heutige Spieler anklicken</p>
       </div>
-      <div style="display:flex; gap:10px;">
-        <button class="btn-3d btn-slate" onclick="downloadSampleTxt()">📥 Beispiel-TXT speichern</button>
-        <button class="btn-3d btn-green" onclick="startMatchday()">✅ OK – Kasse starten</button>
-      </div>
+
+
+
+
+
+ <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+   <select id="event-mode-select" onchange="togglePrepaidMode(this.value)" style="background:#090d16; color:#fff; border:2px solid #3b82f6; padding:12px 16px; border-radius:12px; font-weight:700; font-size:1rem; cursor:pointer;">
+     <option value="NORMAL">🎯 Normaler Spieltag</option>
+     <option value="PREPAID">💳 Event mit Vorkasse</option>
+   </select>
+   <button class="btn-3d btn-slate" onclick="downloadSampleTxt()"> 📥 Beispiel-TXT speichern</button>
+   <button class="btn-3d btn-green" onclick="startMatchday()"> OK – Kasse ✅ starten</button>
+ </div>
+
     </div>
 
     <div class="setup-grid">
@@ -767,6 +777,22 @@
 
         <div>
           <h3>🧾 Aktueller Deckel</h3>
+
+ <div id="prepaid-panel" class="einwurf-panel" style="display:none; margin-top:12px; background:rgba(16, 185, 129, 0.15); border-color:rgba(16, 185, 129, 0.4);">
+   <div>
+     <strong>💳 Vorkasse / Guthaben</strong>
+     <div id="prepaid-status-text" style="font-size:0.85rem; color:#34d399;">Eingezahlt: 0,00 €</div>
+   </div>
+   <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+     <button class="btn-3d btn-red" style="padding:6px 10px; font-size:0.9rem;" onclick="changePrepaid(-5)">-5€</button>
+     <button class="btn-3d btn-green" style="padding:6px 10px; font-size:0.9rem;" onclick="changePrepaid(5)">+5€</button>
+     <button class="btn-3d btn-green" style="padding:6px 10px; font-size:0.9rem;" onclick="changePrepaid(10)">+10€</button>
+     <button class="btn-3d btn-green" style="padding:6px 10px; font-size:0.9rem;" onclick="changePrepaid(20)">+20€</button>
+   </div>
+ </div>
+
+
+
 
       <div class="einwurf-panel" style="margin-top:12px;">
     <div>
@@ -951,6 +977,25 @@ let activeModalPerson = null; // { type: 'TEAM'|'GAST', teamName, personId }
 
 // Statistik für Abrechnung (alles was jemals gebucht wurde oder bezahlt wurde -> wir zählen alle verkauften Artikel!)
 let soldHistory = []; // [{ name, price, category, player, time }]
+
+let isPrepaidMode = false;
+
+function togglePrepaidMode(val) {
+  isPrepaidMode = (val === 'PREPAID');
+  saveKasseState();
+}
+
+function changePrepaid(delta) {
+  const person = getPersonObj(activeModalPerson);
+  if (!person) return;
+  person.prepaid = Math.max(0, (Number(person.prepaid) || 0) + delta);
+  if (person.prepaid > 0) person.hasPaid = false;
+  renderPlayerReceipt();
+  renderPosView();
+  saveKasseState();
+}
+
+
 
 // ================= LIVE UHR & DATUM =================
 function updateDateTime() {
@@ -1240,21 +1285,38 @@ function renderPosView() {
 
 
 function createPersonCardButton(person, type, teamName, btnColorClass) {
- const itemsSum = person.items.reduce((sum, it) => sum + it.price, 0);
- const count = Number(person.einwurf) || 0;
- const einwurfSum = count * 2.0;
- const total = itemsSum + einwurfSum;
- const isPaidCrossed = person.hasPaid && total === 0;
- const btn = document.createElement('button');
- btn.className = `btn-3d ${total > 0 ? 'btn-green' : btnColorClass} player-pos-btn ${isPaidCrossed ? 'paid-crossed' : ''}`;
- btn.innerHTML = `
-   <span>${person.name}</span>
-   <span class="saldo-tag">Offen: ${formatEuro(total)}</span>
-   ${count > 0 ? `<span class="einwurf-badge">🪙 ${count}× Einwurf (+${formatEuro(einwurfSum)})</span>` : ''}
- `;
- btn.onclick = () => openPlayerModal(type, teamName, person.id);
- return btn;
+  const itemsSum = person.items.reduce((sum, it) => sum + it.price, 0);
+  const count = Number(person.einwurf) || 0;
+  const einwurfSum = count * 2.0;
+  const prepaid = isPrepaidMode ? (Number(person.prepaid) || 0) : 0;
+  const diff = (itemsSum + einwurfSum) - prepaid;
+
+  const isPaidCrossed = person.hasPaid && diff === 0 && prepaid === 0;
+  let color = btnColorClass;
+  let badgeText = `Offen: ${formatEuro(Math.max(0, diff))}`;
+
+  if (diff > 0) {
+    color = 'btn-green';
+    badgeText = `Offen: ${formatEuro(diff)}`;
+  } else if (diff < 0) {
+    color = 'btn-amber';
+    badgeText = `Guthaben: ${formatEuro(Math.abs(diff))}`;
+  } else if (prepaid > 0) {
+    color = 'btn-amber';
+    badgeText = `Guthaben: 0,00 €`;
+  }
+
+  const btn = document.createElement('button');
+  btn.className = `btn-3d ${color} player-pos-btn ${isPaidCrossed ? 'paid-crossed' : ''}`;
+  btn.innerHTML = `
+    <span>${person.name}</span>
+    <span class="saldo-tag">${badgeText}</span>
+    ${count > 0 ? `<span class="einwurf-badge">🪙 ${count}× Einwurf (+${formatEuro(einwurfSum)})</span>` : ''}
+  `;
+  btn.onclick = () => openPlayerModal(type, teamName, person.id);
+  return btn;
 }
+
 
 
 
@@ -1480,74 +1542,83 @@ function changeEinwurf(delta) {
 
 
 function renderPlayerReceipt() {
- const person = getPersonObj(activeModalPerson);
- if (!person) return;
+  const person = getPersonObj(activeModalPerson);
+  if (!person) return;
 
- const count = Number(person.einwurf) || 0;
- const einwurfTotal = count * 2.0;
+  const prepaidPanel = document.getElementById('prepaid-panel');
+  if (prepaidPanel) prepaidPanel.style.display = isPrepaidMode ? 'flex' : 'none';
+  const prepaid = isPrepaidMode ? (Number(person.prepaid) || 0) : 0;
+  const prepaidStatus = document.getElementById('prepaid-status-text');
+  if (prepaidStatus) prepaidStatus.textContent = `Eingezahlt: ${formatEuro(prepaid)}`;
 
- const einwurfStatus = document.getElementById('einwurf-status-text');
- const einwurfCount = document.getElementById('einwurf-count');
- if (einwurfStatus) {
-  einwurfStatus.textContent = `${count} × 2,00 € (${formatEuro(einwurfTotal)})`;
- }
- if (einwurfCount) {
-  einwurfCount.textContent = count + '×';
- }
+  const count = Number(person.einwurf) || 0;
+  const einwurfTotal = count * 2.0;
+  document.getElementById('einwurf-status-text').textContent = `${count} × 2,00 € (${formatEuro(einwurfTotal)})`;
+  document.getElementById('einwurf-count').textContent = count + '×';
 
- const listEl = document.getElementById('player-receipt-list');
- listEl.innerHTML = '';
- if (person.items.length === 0 && count === 0) {
-  listEl.innerHTML = '<li style="color:var(--text-muted); justify-content:center;">Noch keine Artikel gebucht.</li>';
- }
+  const listEl = document.getElementById('player-receipt-list');
+  listEl.innerHTML = '';
+  if (person.items.length === 0 && count === 0) {
+    listEl.innerHTML = '<li style="color:var(--text-muted); justify-content:center;">Noch keine Artikel gebucht.</li>';
+  }
+  person.items.forEach(item => {
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <span>${item.name}</span>
+      <span style="display:flex; align-items:center; gap:10px;">
+        <strong>${formatEuro(item.price)}</strong>
+        <button class="btn-3d btn-red" style="padding:3px 8px; font-size:0.8rem;" onclick="removeItemFromPerson('${item.entryId}')">✖</button>
+      </span>
+    `;
+    listEl.appendChild(li);
+  });
 
- person.items.forEach(item => {
-  const li = document.createElement('li');
-  li.innerHTML = `
-   <span>${item.name}</span>
-   <span style="display:flex; align-items:center; gap:10px;">
-    <strong>${formatEuro(item.price)}</strong>
-    <button class="btn-3d btn-red" style="padding:3px 8px; font-size:0.8rem;" onclick="removeItemFromPerson('${item.entryId}')">✖</button>
-   </span>
-  `;
-  listEl.appendChild(li);
- });
+  const itemsTotal = person.items.reduce((s, i) => s + i.price, 0);
+  const diff = (itemsTotal + einwurfTotal) - prepaid;
+  const dueEl = document.getElementById('player-total-due');
+  const labelEl = dueEl.previousElementSibling;
 
- const itemsTotal = person.items.reduce((s, i) => s + i.price, 0);
- const grandTotal = itemsTotal + einwurfTotal;
+  if (diff < 0) {
+    labelEl.textContent = 'Restguthaben (Auszahlung):';
+    dueEl.style.color = '#fbbf24';
+    dueEl.textContent = formatEuro(Math.abs(diff));
+  } else {
+    labelEl.textContent = 'Zu zahlen:';
+    dueEl.style.color = '#34d399';
+    dueEl.textContent = formatEuro(diff);
+  }
 
- document.getElementById('player-total-due').textContent = formatEuro(grandTotal);
- document.getElementById('player-total-breakdown').textContent = count > 0
-  ? `Verzehr: ${formatEuro(itemsTotal)} + Rückgabe Einwurfgeld (${count}×): ${formatEuro(einwurfTotal)}`
-  : `Verzehr: ${formatEuro(itemsTotal)}`;
+  document.getElementById('player-total-breakdown').textContent = isPrepaidMode
+    ? `Verzehr & Einwurf: ${formatEuro(itemsTotal + einwurfTotal)} − Vorkasse: ${formatEuro(prepaid)}`
+    : (count > 0 ? `Verzehr: ${formatEuro(itemsTotal)} + Einwurfgeld (${count}×): ${formatEuro(einwurfTotal)}` : `Verzehr: ${formatEuro(itemsTotal)}`);
 }
 
 function payPlayerTab() {
- const person = getPersonObj(activeModalPerson);
- if (!person) return;
+  const person = getPersonObj(activeModalPerson);
+  if (!person) return;
+  const count = Number(person.einwurf) || 0;
+  const einwurfTotal = count * 2.0;
+  const itemsTotal = person.items.reduce((s, i) => s + i.price, 0);
+  const prepaid = isPrepaidMode ? (Number(person.prepaid) || 0) : 0;
+  const diff = (itemsTotal + einwurfTotal) - prepaid;
 
- const count = Number(person.einwurf) || 0;
- const einwurfTotal = count * 2.0;
- const itemsTotal = person.items.reduce((s, i) => s + i.price, 0);
- const grandTotal = itemsTotal + einwurfTotal;
+  if (diff === 0 && prepaid === 0) {
+    alert('Der Deckel steht auf 0,00 €.');
+    return;
+  }
 
- if (grandTotal === 0) {
-  alert('Der Deckel steht auf 0,00 €.');
-  return;
- }
+  const msg = diff < 0
+    ? `${person.name} bekommt ${formatEuro(Math.abs(diff))} Restguthaben ausgezahlt. Konto jetzt schließen?`
+    : `${person.name} zahlt ${formatEuro(diff)} nach. Deckel jetzt auf 0,00 € setzen?`;
 
- const einwurfInfo = count > 0
-  ? ` (inkl. ${count}× 2,00 € = ${formatEuro(einwurfTotal)} Einwurfgeld-Rückgabe)`
-  : '';
-
- if (confirm(`${person.name} bezahlt ${formatEuro(grandTotal)}${einwurfInfo}. Deckel jetzt auf 0,00 € setzen?`)) {
-   person.items = [];
-   person.einwurf = 0;
-   person.hasPaid = true;
-   closePlayerModal();
-   saveKasseState();
- }
-
+  if (confirm(msg)) {
+    person.items = [];
+    person.einwurf = 0;
+    person.prepaid = 0;
+    person.hasPaid = true;
+    closePlayerModal();
+    saveKasseState();
+  }
 }
 
 // ================= 3-FACH ABRECHNUNG =================
@@ -1667,6 +1738,8 @@ function saveKasseState() {
     guests,
     soldHistory,
     currentPosTab,
+ isPrepaidMode,
+
     isPosActive: document.getElementById('view-pos').classList.contains('active')
   };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -1684,7 +1757,16 @@ function loadKasseState() {
     activePlayers = state.activePlayers || {};
     guests = state.guests || [];
     soldHistory = state.soldHistory || [];
+
+
+
+    guests = state.guests || [];
+    soldHistory = state.soldHistory || [];
+    isPrepaidMode = Boolean(state.isPrepaidMode);
+    const modeSelect = document.getElementById('event-mode-select');
+    if (modeSelect) modeSelect.value = isPrepaidMode ? 'PREPAID' : 'NORMAL';
     currentPosTab = (state.currentPosTab === 'HEIM' || state.currentPosTab === 'GUESTS') ? state.currentPosTab : 'HEIM';
+
 
 
     if (state.isPosActive) {
