@@ -2065,9 +2065,19 @@ function handleBarcodeScan(scannedText) {
 
 
 
+  // 4. In allen aktiven Teamspielern (inkl. Gäste-Team) nach bereits verknüpftem cardCode suchen
+  for (const team of selectedTeams) {
+    const foundByCard = (activePlayers[team] || []).find(
+      p => p.cardCode && p.cardCode.toLowerCase() === scannedText.trim().toLowerCase()
+    );
+    if (foundByCard) {
+      openPlayerModal('TEAM', team, foundByCard.id);
+      return;
+    }
+  }
 
-  // 4. In bereits angelegten Gästen suchen (entweder über Name oder über die hinterlegte Karten-ID)
-  const foundGuest = guests.find(
+  // 5. In separaten Gästen (guests) nach Name oder cardCode suchen
+  const foundGuest = (guests || []).find(
     g => normalizeScannedName(g.name) === searchNorm ||
          (g.cardCode && g.cardCode.toLowerCase() === scannedText.trim().toLowerCase())
   );
@@ -2076,7 +2086,7 @@ function handleBarcodeScan(scannedText) {
     return;
   }
 
-  // 5. Neue Gast-Karte wurde gescannt -> Auswahlfenster mit Liste öffnen
+  // 6. Neue Gast-Karte wurde gescannt -> Auswahlfenster öffnen
   openAssignCardModal(scannedText.trim());
 }
 
@@ -2085,34 +2095,53 @@ let pendingCardCode = '';
 
 function openAssignCardModal(rawCode) {
   pendingCardCode = rawCode;
-  document.getElementById('assign-card-title').textContent = `💳 Karte "${rawCode}" zuordnen`;
+  const titleEl = document.getElementById('assign-card-title');
   const input = document.getElementById('assign-card-input');
-  input.value = '';
+  const modal = document.getElementById('assign-card-modal');
+  if (!modal) {
+    alert('Fehler: Das Auswahlfenster (assign-card-modal) fehlt noch im HTML!');
+    return;
+  }
+  if (titleEl) titleEl.textContent = `💳 Karte "${rawCode}" zuordnen`;
+  if (input) input.value = '';
   renderAssignCardList();
-  document.getElementById('assign-card-modal').classList.add('open');
-  setTimeout(() => input.focus(), 100);
+  modal.classList.add('open');
+  if (input) setTimeout(() => input.focus(), 100);
 }
 
 function closeAssignCardModal() {
-  document.getElementById('assign-card-modal').classList.remove('open');
+  const modal = document.getElementById('assign-card-modal');
+  if (modal) modal.classList.remove('open');
   pendingCardCode = '';
 }
 
 function getAllAvailableGuestNames() {
-  // Zeigt NUR Gäste aus der heutigen Gäste-Auswahl, die noch keine Scanner-Karte verknüpft haben
-  return (guests || [])
-    .filter(g => !g.cardCode)
-    .map(g => ({
-      id: g.id,
-      name: g.name,
-      team: 'Ausgewählter Gast'
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name, 'de'));
-}
+  const list = [];
 
+  // 1. Ausgewählte Spieler aus einer "Gäste"-Mannschaft (ohne Karte)
+  (selectedTeams || []).forEach(team => {
+    if (team.toLowerCase().includes('gast') || team.toLowerCase().includes('gäste')) {
+      (activePlayers[team] || []).forEach(p => {
+        if (!p.cardCode) {
+          list.push({ id: p.id, name: p.name, team: team, source: 'TEAM' });
+        }
+      });
+    }
+  });
+
+  // 2. Zusätzlich manuell angelegte Gäste aus dem Gäste-Tab (ohne Karte)
+  (guests || []).forEach(g => {
+    if (!g.cardCode) {
+      list.push({ id: g.id, name: g.name, team: 'Gastspieler', source: 'GAST' });
+    }
+  });
+
+  return list.sort((a, b) => a.name.localeCompare(b.name, 'de'));
+}
 
 function renderAssignCardList() {
   const listEl = document.getElementById('assign-card-list');
+  if (!listEl) return;
   const query = (document.getElementById('assign-card-input').value || '').trim().toLowerCase();
   listEl.innerHTML = '';
 
@@ -2121,7 +2150,7 @@ function renderAssignCardList() {
   );
 
   if (candidates.length === 0) {
-    listEl.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:16px;">Kein Treffer in der Liste – oben einfach auf „✅ Übernehmen“ klicken, um den Namen neu anzulegen.</div>';
+    listEl.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--text-muted); padding:16px;">Keine freien Gäste gefunden – oben Namen eintippen und auf „✅ Übernehmen“ klicken.</div>';
     return;
   }
 
@@ -2133,12 +2162,17 @@ function renderAssignCardList() {
       <span>${c.name}</span>
       <span style="font-size:0.75rem; color:#94a3b8; font-weight:500;">${c.team}</span>
     `;
-    btn.onclick = () => finishAssignCard(c.name);
+    btn.onclick = () => finishAssignCard(c.name, c.id, c.source, c.team);
     listEl.appendChild(btn);
   });
 }
 
-function finishAssignCard(chosenName) {
+function confirmAssignCustomName() {
+  const inputVal = (document.getElementById('assign-card-input').value || '').trim();
+  finishAssignCard(inputVal, null, 'NEW', 'GAST');
+}
+
+function finishAssignCard(chosenName, targetId, source, teamName) {
   const rawCode = pendingCardCode;
   if (!rawCode) return;
 
@@ -2146,24 +2180,36 @@ function finishAssignCard(chosenName) {
     ? rawCode.split(',').map(p => p.trim()).reverse().join(' ')
     : rawCode;
 
-  // Prüfen, ob der gewählte Name schon in den heutigen Gästen existiert
-  const existingGuest = (guests || []).find(
-    g => g.name.toLowerCase() === (chosenName || '').toLowerCase() && !g.cardCode
-  );
-
-  if (existingGuest) {
-    existingGuest.cardCode = rawCode;
-    existingGuest.name = `${existingGuest.name} (${cleanCode})`;
-    closeAssignCardModal();
-    saveKasseState();
-    renderPosView();
-    openPlayerModal('GAST', 'GAST', existingGuest.id);
-    return;
+  // Fall A: Spieler wurde aus der Gäste-Mannschaft angeklickt
+  if (source === 'TEAM' && targetId && teamName) {
+    const player = (activePlayers[teamName] || []).find(p => p.id === targetId);
+    if (player) {
+      player.cardCode = rawCode;
+      player.name = `${player.name} (${cleanCode})`;
+      closeAssignCardModal();
+      saveKasseState();
+      renderPosView();
+      openPlayerModal('TEAM', teamName, player.id);
+      return;
+    }
   }
 
-  // Falls neuer Name oben eingetippt wurde -> Neuen Gast anlegen
-  const displayName = chosenName ? `${chosenName} (${cleanCode})` : cleanCode;
+  // Fall B: Gast wurde aus dem separaten Gäste-Tab angeklickt
+  if (source === 'GAST' && targetId) {
+    const existingGuest = (guests || []).find(g => g.id === targetId);
+    if (existingGuest) {
+      existingGuest.cardCode = rawCode;
+      existingGuest.name = `${existingGuest.name} (${cleanCode})`;
+      closeAssignCardModal();
+      saveKasseState();
+      renderPosView();
+      openPlayerModal('GAST', 'GAST', existingGuest.id);
+      return;
+    }
+  }
 
+  // Fall C: Neuer Name wurde oben eingetippt
+  const displayName = chosenName ? `${chosenName} (${cleanCode})` : cleanCode;
   const newGuest = {
     id: 'g_' + Date.now(),
     name: displayName,
@@ -2178,8 +2224,6 @@ function finishAssignCard(chosenName) {
   renderPosView();
   openPlayerModal('GAST', 'GAST', newGuest.id);
 }
-
-
 
 
 // Visuelles Feedback auf dem Badge, wenn ein Scan erkannt wurde
