@@ -1974,17 +1974,27 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+
+
+
+
+
+
+
+
+
 // ================= BARCODE SCANNER INTEGRATION =================
 let scanBuffer = '';
 let scanLastTime = 0;
 
 document.addEventListener('keydown', function(e) {
-  // Eingaben in echte Textfelder (z.B. Suchfeld oder Rückgeld-Eingabe) nicht abfangen
   const tag = document.activeElement ? document.activeElement.tagName : '';
   if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
+  // Ignoriere reine Steuer- und Umschalttasten (Shift, Control, Alt)
+  if (e.key === 'Shift' || e.key === 'Control' || e.key === 'Alt' || e.key === 'Meta') return;
+
   const now = Date.now();
-  // Scanner tippt extrem schnell (< 60ms pro Zeichen); bei langsamer Hand-Eingabe Puffer zurücksetzen
   if (now - scanLastTime > 80) {
     scanBuffer = '';
   }
@@ -1996,13 +2006,12 @@ document.addEventListener('keydown', function(e) {
       handleBarcodeScan(scanBuffer.trim());
     }
     scanBuffer = '';
-  } else if (e.key.length === 1) {
+  } else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
     scanBuffer += e.key;
   }
 });
 
 function normalizeScannedName(raw) {
-  // Wandelt "Gaul, Jannik" automatisch in "jannik gaul" um
   if (raw.includes(',')) {
     const parts = raw.split(',').map(p => p.trim()).filter(Boolean);
     if (parts.length === 2) {
@@ -2013,19 +2022,20 @@ function normalizeScannedName(raw) {
 }
 
 function handleBarcodeScan(scannedText) {
-  // Nur im Kassenbetrieb (VIEW 2) reagieren
   const posView = document.getElementById('view-pos');
   if (!posView || !posView.classList.contains('active')) return;
-  flashScannerBadge(scannedText);
 
-  const searchNorm = normalizeScannedName(scannedText);
+  // US-Tastaturlayout-Fehler korrigieren ("Gastß29" -> "Gast-29")
+  let cleanText = scannedText.trim().replace(/ß/g, '-');
 
-  // 1. Falls bereits ein Spieler-Fenster offen ist, dieses zuerst schließen
+  flashScannerBadge(cleanText);
+  const searchNorm = normalizeScannedName(cleanText);
+
   if (activeModalPerson) {
     closePlayerModal();
   }
 
-  // 2. Zuerst in allen bereits aktiven Spielern der ausgewählten Teams suchen
+  // 1. In bereits aktiven Spielern nach Namen suchen
   for (const team of selectedTeams) {
     const foundActive = (activePlayers[team] || []).find(
       p => normalizeScannedName(p.name) === searchNorm
@@ -2036,7 +2046,7 @@ function handleBarcodeScan(scannedText) {
     }
   }
 
-  // 3. Falls Spieler im Team-Kader steht, aber noch nicht aktiviert war -> automatisch aktivieren
+  // 2. Im Team-Kader suchen und aktivieren
   for (const team of selectedTeams) {
     const foundRoster = (allTeams[team] || []).find(
       name => normalizeScannedName(name) === searchNorm
@@ -2058,17 +2068,20 @@ function handleBarcodeScan(scannedText) {
     }
   }
 
+  // 3. Strenge Prüfung für Gast-Karten: Muss exakt "Gast-1" bis "Gast-200" sein
+  const guestCardMatch = cleanText.match(/^Gast-([1-9]|[1-9][0-9]|1[0-9]{2}|200)$/i);
+  if (!guestCardMatch) {
+    alert(`Fehler: Ungültiger Barcode "${cleanText}"!\nErlaubt sind nur Karten von Gast-1 bis Gast-200 oder bekannte Spielernamen.`);
+    return;
+  }
 
+  // Einheitliche Schreibweise erzwingen (z.B. "gast-9" -> "Gast-9")
+  const standardizedCode = 'Gast-' + guestCardMatch[1];
 
-
-
-
-
-
-  // 4. In allen aktiven Teamspielern (inkl. Gäste-Team) nach bereits verknüpftem cardCode suchen
+  // 4. Prüfen, ob Karte schon einem Teamspieler zugeordnet ist
   for (const team of selectedTeams) {
     const foundByCard = (activePlayers[team] || []).find(
-      p => p.cardCode && p.cardCode.toLowerCase() === scannedText.trim().toLowerCase()
+      p => p.cardCode && p.cardCode.toLowerCase() === standardizedCode.toLowerCase()
     );
     if (foundByCard) {
       openPlayerModal('TEAM', team, foundByCard.id);
@@ -2076,19 +2089,20 @@ function handleBarcodeScan(scannedText) {
     }
   }
 
-  // 5. In separaten Gästen (guests) nach Name oder cardCode suchen
+  // 5. Prüfen, ob Karte schon einem Gast zugeordnet ist
   const foundGuest = (guests || []).find(
-    g => normalizeScannedName(g.name) === searchNorm ||
-         (g.cardCode && g.cardCode.toLowerCase() === scannedText.trim().toLowerCase())
+    g => normalizeScannedName(g.name) === standardizedCode.toLowerCase() ||
+    (g.cardCode && g.cardCode.toLowerCase() === standardizedCode.toLowerCase())
   );
   if (foundGuest) {
     openPlayerModal('GAST', 'GAST', foundGuest.id);
     return;
   }
 
-  // 6. Neue Gast-Karte wurde gescannt -> Auswahlfenster öffnen
-  openAssignCardModal(scannedText.trim());
+  // 6. Neue gültige Gast-Karte zuordnen
+  openAssignCardModal(standardizedCode);
 }
+
 
 // ================= GAST-KARTE AUSWAHLFENSTER =================
 let pendingCardCode = '';
